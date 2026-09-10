@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Card Game 24</title>
+<style>
+  :root {
+    --felt: #14603f;
+    --felt-dark: #0d4029;
+    --ink: #16202b;
+    --muted: #6b7a89;
+    --card-bg: #fdfdfb;
+    --panel: rgba(255,255,255,0.96);
+    --red: #c8102e;
+    --accent: #f0b429;
+    --good: #1f9254;
+    --bad: #c8102e;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font: 16px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background: radial-gradient(circle at 50% 0%, var(--felt) 0%, var(--felt-dark) 70%);
+    padding: 28px 16px 56px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+
+  header { text-align: center; color: #fff; margin-bottom: 22px; }
+  header h1 { margin: 0; font-size: 30px; letter-spacing: .5px; }
+  header p { margin: 6px 0 0; color: #cfe6d9; font-size: 14px; }
+  .streak { display: inline-block; margin-top: 10px; padding: 4px 12px; border-radius: 999px;
+            background: rgba(255,255,255,.14); font-size: 13px; color: #fff; }
+
+  /* ---------- cards ---------- */
+  .hand { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 22px; }
+  .card {
+    width: 96px; height: 136px; background: var(--card-bg); border-radius: var(--radius);
+    box-shadow: 0 8px 18px rgba(0,0,0,.35); position: relative; cursor: pointer;
+    border: none; padding: 8px; font-family: inherit; color: var(--ink);
+    transition: transform .15s ease, box-shadow .15s ease;
+    animation: deal .45s cubic-bezier(.2,.9,.3,1.3) backwards;
+  }
+  .card:hover { transform: translateY(-8px); box-shadow: 0 14px 26px rgba(0,0,0,.4); }
+  .card.red { color: var(--red); }
+  .card .corner { position: absolute; font-size: 19px; font-weight: 700; line-height: 1; }
+  .card .corner.tl { top: 9px; left: 10px; }
+  .card .corner.br { bottom: 9px; right: 10px; transform: rotate(180deg); }
+  .card .pip { position: absolute; inset: 0; display: grid; place-items: center; font-size: 40px; }
+  @keyframes deal { from { opacity: 0; transform: translateY(-40px) rotate(-8deg) scale(.9); } }
+
+  /* ---------- panels ---------- */
+  .panel { background: var(--panel); border-radius: 18px; padding: 20px; box-shadow: 0 10px 28px rgba(0,0,0,.25); }
+  .panel + .panel { margin-top: 18px; }
+  h2 { margin: 0 0 12px; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+
+  .entry { display: flex; gap: 10px; flex-wrap: wrap; }
+  input[type=text] {
+    flex: 1 1 260px; min-width: 0; font-size: 20px; font-family: "Consolas", ui-monospace, monospace;
+    padding: 12px 14px; border: 2px solid #d7dee5; border-radius: 10px; background: #fff; color: inherit;
+  }
+  input[type=text]:focus { outline: none; border-color: var(--felt); }
+
+  .keys { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  button {
+    font: inherit; cursor: pointer; border-radius: 10px; border: 1px solid #cfd8e0;
+    background: #fff; padding: 9px 14px; transition: background .15s, transform .1s;
+  }
+  button:hover:not(:disabled) { background: #eef3f7; }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:disabled { opacity: .45; cursor: default; }
+  .key { min-width: 46px; font-size: 18px; font-family: ui-monospace, monospace; }
+  .primary { background: var(--felt); color: #fff; border-color: transparent; font-weight: 600; }
+  .primary:hover:not(:disabled) { background: #18734b; }
+  .amber { background: var(--accent); border-color: transparent; font-weight: 600; }
+  .amber:hover:not(:disabled) { background: #f7c85c; }
+
+  .verdict { margin-top: 14px; padding: 12px 14px; border-radius: 10px; font-weight: 600;
+             display: none; animation: pop .25s ease; }
+  .verdict.show { display: block; }
+  .verdict.good { background: #e5f6ec; color: var(--good); border: 1px solid #b7e3c9; }
+  .verdict.bad  { background: #fdeaed; color: var(--bad);  border: 1px solid #f4c2cb; }
+  @keyframes pop { from { opacity: 0; transform: translateY(-6px); } }
+
+  /* ---------- solver ---------- */
+  .tiles { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; min-height: 74px; margin-bottom: 6px; }
+  .tile {
+    min-width: 62px; padding: 12px 14px; border-radius: 12px; background: #eef3f7; border: 2px solid #d7dee5;
+    text-align: center; font-family: ui-monospace, monospace; font-size: 20px; font-weight: 700;
+    transition: all .3s ease;
+  }
+  .tile small { display: block; font-size: 11px; font-weight: 400; color: var(--muted); margin-top: 3px;
+                font-family: inherit; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tile.merging { background: #fff3d6; border-color: var(--accent); transform: scale(1.06); }
+  .tile.fresh { animation: grow .4s cubic-bezier(.2,.9,.3,1.4); background: #e5f6ec; border-color: #7fc9a1; }
+  @keyframes grow { from { opacity: 0; transform: scale(.5) translateY(-14px); } }
+
+  .steps { list-style: none; margin: 10px 0 0; padding: 0; font-family: ui-monospace, monospace; font-size: 15px; }
+  .steps li { padding: 6px 10px; border-left: 3px solid #d7dee5; color: var(--muted); }
+  .steps li.done { border-left-color: var(--good); color: var(--ink); }
+
+  svg { width: 100%; height: 230px; display: block; margin-top: 8px; }
+  .node-circle { fill: #fff; stroke: var(--felt); stroke-width: 2; }
+  .node-circle.leaf { fill: var(--accent); stroke: #b8860b; }
+  .node-text { font: 700 15px ui-monospace, monospace; text-anchor: middle; dominant-baseline: central; }
+  .edge { stroke: #9fb2c0; stroke-width: 2; }
+  .fade-in { animation: fade .4s ease backwards; }
+  @keyframes fade { from { opacity: 0; } }
+
+  .hint { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+  code { background: #eef3f7; padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Card Game 24</h1>
+    <p>Use all four cards exactly once with + − × ÷ and parentheses to make 24. A=1, J=11, Q=12, K=13.</p>
+    <div class="streak">Solved: <span id="score">0</span> &nbsp;·&nbsp; Streak: <span id="streak">0</span></div>
+  </header>
+
+  <div class="hand" id="hand"></div>
+
+  <section class="panel">
+    <h2>Your expression</h2>
+    <div class="entry">
+      <input type="text" id="expr" placeholder="e.g. (8 - 5) * (6 + 2)" autocomplete="off" spellcheck="false">
+      <button class="primary" id="check">Check</button>
+      <button id="newCards">New cards</button>
+    </div>
+    <div class="keys" id="keys"></div>
+    <div class="verdict" id="verdict"></div>
+    <p class="hint">Tip: click a card to insert its value. Press <code>Enter</code> to check.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Solver</h2>
+    <div class="keys" style="margin-top:0">
+      <button class="amber" id="solve">Find a solution</button>
+      <button id="step" disabled>Step ▶</button>
+      <button id="auto" disabled>Auto-play</button>
+      <button id="another" disabled>Another solution</button>
+      <button id="resetSolve" disabled>Reset</button>
+    </div>
+    <div class="tiles" id="tiles"></div>
+    <ol class="steps" id="stepList"></ol>
+    <svg id="tree" viewBox="0 0 600 230" preserveAspectRatio="xMidYMid meet" aria-label="expression tree"></svg>
+    <p class="hint" id="solverNote">The solver combines two values at a time, in every order, with every operator — that
+      covers all five binary-tree shapes for four numbers. Exact fractions are used, so 8 ÷ (3 − 8 ÷ 3) works.</p>
+  </section>
+</div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ *
+ * Exact rational arithmetic - floats would break 8 / (3 - 8 / 3).
+ * ------------------------------------------------------------------ */
+function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
+
+class Frac {
+  constructor(n, d = 1) {
+    if (d === 0) throw new Error("division by zero");
+    if (d < 0) { n = -n; d = -d; }
+    const g = gcd(n, d);
+    this.n = n / g; this.d = d / g;
+  }
+  add(o) { return new Frac(this.n * o.d + o.n * this.d, this.d * o.d); }
+  sub(o) { return new Frac(this.n * o.d - o.n * this.d, this.d * o.d); }
+  mul(o) { return new Frac(this.n * o.n, this.d * o.d); }
+  div(o) { if (o.n === 0) throw new Error("division by zero"); return new Frac(this.n * o.d, this.d * o.n); }
+  isZero() { return this.n === 0; }
+  eq(o) { return this.n === o.n && this.d === o.d; }
+  toString() { return this.d === 1 ? String(this.n) : `${this.n}/${this.d}`; }
+}
+const TARGET = new Frac(24);
+
+/* ------------------------------------------------------------------ *
+ * Parser:  expr := term (('+'|'-') term)*
+ *          term := factor (('*'|'/') factor)*
+ *          factor := '-' factor | '(' expr ')' | number | A J Q K
+ * Returns the exact value plus every operand the player used, so we can
+ * confirm each card was used exactly once.  O(n) time and space.
+ * ------------------------------------------------------------------ */
+const RANK_VALUE = { A: 1, J: 11, Q: 12, K: 13 };
+
+function parseExpression(text) {
+  let pos = 0;
+  const operands = [];
+
+  const peek = () => { while (pos < text.length && /\s/.test(text[pos])) pos++; return pos < text.length ? text[pos] : null; };
+
+  function expr() {
+    let v = term();
+    let op;
+    while ((op = peek()) === "+" || op === "-") { pos++; const r = term(); v = op === "+" ? v.add(r) : v.sub(r); }
+    return v;
+  }
+  function term() {
+    let v = factor();
+    let op;
+    while ((op = peek()) === "*" || op === "/" || op === "x" || op === "×" || op === "÷") {
+      pos++;
+      const r = factor();
+      v = (op === "/" || op === "÷") ? v.div(r) : v.mul(r);
+    }
+    return v;
+  }
+  function factor() {
+    const c = peek();
+    if (c === null) throw new Error("expression ended early");
+    if (c === "-" || c === "−") { pos++; return new Frac(0).sub(factor()); }
+    if (c === "(") {
+      pos++;
+      const v = expr();
+      if (peek() !== ")") throw new Error("missing ')'");
+      pos++;
+      return v;
+    }
+    if (/[0-9]/.test(c)) {
+      const start = pos;
+      while (pos < text.length && /[0-9]/.test(text[pos])) pos++;
+      const value = parseInt(text.slice(start, pos), 10);
+      operands.push(value);
+      return new Frac(value);
+    }
+    const upper = c.toUpperCase();
+    if (RANK_VALUE[upper]) { pos++; operands.push(RANK_VALUE[upper]); return new Frac(RANK_VALUE[upper]); }
+    throw new Error(`unexpected '${c}'`);
+  }
+
+  const value = expr();
+  if (peek() !== null) throw new Error(`unexpected '${text[pos]}'`);
+  return { value, operands };
+}
+
+/* ------------------------------------------------------------------ *
+ * Solver - collapse two values into one until a single value is left.
+ * Doing that in every pair order with every operator reproduces all
+ * orderings of the numbers and all five parenthesisations.
+ * Four cards => at most 3888 expressions, so it runs instantly.
+ * ------------------------------------------------------------------ */
+const OPS = [
+  { sym: "+", apply: (a, b) => a.add(b), commutative: true },
+  { sym: "-", apply: (a, b) => a.sub(b), commutative: false },
+  { sym: "*", apply: (a, b) => a.mul(b), commutative: true },
+  { sym: "/", apply: (a, b) => (b.isZero() ? null : a.div(b)), commutative: false },
+];
+
+function leaf(value) { return { value: new Frac(value), text: String(value), tree: { label: String(value) } }; }
+
+function combine(a, b, op, flipped) {
+  const [x, y] = flipped ? [b, a] : [a, b];
+  const value = op.apply(x.value, y.value);
+  if (value === null) return null;
+  const item = {
+    value,
+    text: `(${x.text} ${op.sym} ${y.text})`,
+    tree: { label: op.sym, left: x.tree, right: y.tree, value },
+    step: { left: x, right: y, op: op.sym, result: value, node: null },
+  };
+  item.step.node = item.tree;   // lets the drawing reveal nodes in solver order
+  return item;
+}
+
+/** Canonical form so 3+8 and 8+3 are not reported as two different answers. */
+function canonical(node) {
+  if (!node.left) return node.label;
+  const l = canonical(node.left), r = canonical(node.right);
+  const parts = (node.label === "+" || node.label === "*") ? [l, r].sort() : [l, r];
+  return `(${parts[0]}${node.label}${parts[1]})`;
+}
+
+function findSolutions(values) {
+  const found = [];
+  const seen = new Set();
+
+  function search(items, steps) {
+    if (items.length === 1) {
+      if (!items[0].value.eq(TARGET)) return;
+      const key = canonical(items[0].tree);
+      if (seen.has(key)) return;
+      seen.add(key);
+      const ordered = steps.slice();
+      ordered.forEach((s, i) => { s.node.order = i + 1; });
+      found.push({ text: stripOuter(items[0].text), tree: items[0].tree, steps: ordered });
+      return;
+    }
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const rest = items.filter((_, k) => k !== i && k !== j);
+        for (const op of OPS) {
+          for (const flipped of (op.commutative ? [false] : [false, true])) {
+            const merged = combine(items[i], items[j], op, flipped);
+            if (!merged) continue;
+            steps.push(merged.step);
+            search(rest.concat([merged]), steps);
+            steps.pop();
+          }
+        }
+      }
+    }
+  }
+
+  search(values.map(leaf), []);
+  return found;
+}
+
+const stripOuter = (s) => (s.startsWith("(") && s.endsWith(")") ? s.slice(1, -1) : s);
+
+/* ------------------------------------------------------------------ *
+ * Deck
+ * ------------------------------------------------------------------ */
+const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+const SUITS = [{ s: "♠", red: false }, { s: "♥", red: true }, { s: "♦", red: true }, { s: "♣", red: false }];
+
+function dealHand() {
+  const deck = [];
+  RANKS.forEach((rank, i) => SUITS.forEach((suit) => deck.push({ rank, suit: suit.s, red: suit.red, value: i + 1 })));
+  const hand = [];
+  for (let k = 0; k < 4; k++) hand.push(deck.splice(Math.floor(Math.random() * deck.length), 1)[0]);
+  return hand;
+}
+
+/* ------------------------------------------------------------------ *
+ * UI
+ * ------------------------------------------------------------------ */
+const $ = (id) => document.getElementById(id);
+const state = { hand: [], solutions: [], index: 0, stepAt: 0, tiles: [], timer: null, score: 0, streak: 0 };
+
+function renderHand() {
+  $("hand").innerHTML = "";
+  state.hand.forEach((card, i) => {
+    const el = document.createElement("button");
+    el.className = "card" + (card.red ? " red" : "");
+    el.style.animationDelay = `${i * 90}ms`;
+    el.title = `Insert ${card.value}`;
+    el.innerHTML = `<span class="corner tl">${card.rank}<br>${card.suit}</span>
+                    <span class="pip">${card.suit}</span>
+                    <span class="corner br">${card.rank}<br>${card.suit}</span>`;
+    el.addEventListener("click", () => insert(String(card.value)));
+    $("hand").appendChild(el);
+  });
+}
+
+function insert(text) {
+  const input = $("expr");
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  input.value = input.value.slice(0, start) + text + input.value.slice(end);
+  input.focus();
+  input.selectionStart = input.selectionEnd = start + text.length;
+}
+
+function buildKeys() {
+  const keys = [["+", "+"], ["−", "-"], ["×", "*"], ["÷", "/"], ["(", "("], [")", ")"]];
+  const box = $("keys");
+  keys.forEach(([label, value]) => {
+    const b = document.createElement("button");
+    b.className = "key";
+    b.textContent = label;
+    b.addEventListener("click", () => insert(value));
+    box.appendChild(b);
+  });
+  const back = document.createElement("button");
+  back.textContent = "⌫";
+  back.addEventListener("click", () => { $("expr").value = $("expr").value.slice(0, -1); $("expr").focus(); });
+  const clear = document.createElement("button");
+  clear.textContent = "Clear";
+  clear.addEventListener("click", () => { $("expr").value = ""; $("expr").focus(); });
+  box.append(back, clear);
+}
+
+function say(message, good) {
+  const v = $("verdict");
+  v.textContent = message;
+  v.className = "verdict show " + (good ? "good" : "bad");
+}
+
+function checkAnswer() {
+  const text = $("expr").value.trim();
+  if (!text) return;
+
+  let result;
+  try {
+    result = parseExpression(text);
+  } catch (err) {
+    say("Invalid expression: " + err.message, false);
+    state.streak = 0; updateScore();
+    return;
+  }
+
+  const used = [...result.operands].sort((a, b) => a - b);
+  const cards = state.hand.map((c) => c.value).sort((a, b) => a - b);
+  if (used.join(",") !== cards.join(",")) {
+    say(`Use each card exactly once. You used [${used}] but the cards are [${cards}].`, false);
+    state.streak = 0; updateScore();
+    return;
+  }
+
+  if (result.value.eq(TARGET)) {
+    state.score++; state.streak++; updateScore();
+    say("Correct — that makes 24! 🎉  Deal again for a new hand.", true);
+  } else {
+    state.streak = 0; updateScore();
+    say(`That evaluates to ${result.value}, not 24.`, false);
+  }
+}
+
+function updateScore() { $("score").textContent = state.score; $("streak").textContent = state.streak; }
+
+/* ---------- solver panel ---------- */
+function resetSolver(keepSolutions) {
+  clearInterval(state.timer); state.timer = null;
+  state.stepAt = 0;
+  if (!keepSolutions) { state.solutions = []; state.index = 0; }
+  state.tiles = state.hand.map((c) => ({ label: String(c.value), sub: "", fresh: false, merging: false }));
+  renderTiles();
+  $("stepList").innerHTML = "";
+  $("tree").innerHTML = "";
+  const has = state.solutions.length > 0;
+  $("step").disabled = !has;
+  $("auto").disabled = !has;
+  $("another").disabled = state.solutions.length < 2;
+  $("resetSolve").disabled = !has;
+  if (has) renderSteps();
+}
+
+function renderTiles() {
+  $("tiles").innerHTML = "";
+  state.tiles.forEach((t) => {
+    const el = document.createElement("div");
+    el.className = "tile" + (t.fresh ? " fresh" : "") + (t.merging ? " merging" : "");
+    el.innerHTML = t.sub ? `${t.label}<small>${t.sub}</small>` : t.label;
+    $("tiles").appendChild(el);
+  });
+}
+
+function renderSteps() {
+  const solution = state.solutions[state.index];
+  $("stepList").innerHTML = "";
+  solution.steps.forEach((s, i) => {
+    const li = document.createElement("li");
+    if (i < state.stepAt) li.className = "done";
+    li.textContent = `${i + 1}.  ${stripOuter(s.left.text)}  ${s.op}  ${stripOuter(s.right.text)}  =  ${s.result}`;
+    $("stepList").appendChild(li);
+  });
+}
+
+function doStep() {
+  const solution = state.solutions[state.index];
+  if (state.stepAt >= solution.steps.length) { clearInterval(state.timer); state.timer = null; return; }
+
+  const step = solution.steps[state.stepAt];
+  const leftLabel = String(step.left.value), rightLabel = String(step.right.value);
+
+  // highlight the two tiles being combined, then replace them with the result
+  const iLeft = state.tiles.findIndex((t) => !t.merging && t.label === leftLabel);
+  const iRight = state.tiles.findIndex((t, k) => k !== iLeft && t.label === rightLabel);
+  if (iLeft >= 0) state.tiles[iLeft].merging = true;
+  if (iRight >= 0) state.tiles[iRight].merging = true;
+  state.tiles.forEach((t) => (t.fresh = false));
+  renderTiles();
+
+  setTimeout(() => {
+    state.tiles = state.tiles.filter((t) => !t.merging);
+    state.tiles.push({
+      label: String(step.result),
+      sub: stripOuter(`${step.left.text} ${step.op} ${step.right.text}`),
+      fresh: true, merging: false,
+    });
+    state.stepAt++;
+    renderTiles();
+    renderSteps();
+    drawTree(solution.tree, state.stepAt);
+    if (state.stepAt === solution.steps.length) {
+      $("solverNote").textContent = `Solution ${state.index + 1} of ${state.solutions.length}:  ${solution.text} = 24`;
+      $("step").disabled = true;
+      $("auto").disabled = true;
+      clearInterval(state.timer); state.timer = null;
+    }
+  }, 320);
+}
+
+function runSolver() {
+  const solutions = findSolutions(state.hand.map((c) => c.value));
+  state.solutions = solutions;
+  state.index = 0;
+  resetSolver(true);
+  if (!solutions.length) {
+    $("solverNote").textContent = "No solution exists for these four cards — deal a new hand.";
+    return;
+  }
+  $("solverNote").textContent = `Found ${solutions.length} distinct solution${solutions.length > 1 ? "s" : ""}. Step through one below.`;
+  drawTree(solutions[0].tree, 0);
+}
+
+/* ---------- expression tree ---------- *
+ * Leaves are spread evenly left to right; a parent sits above the midpoint of
+ * its children. Nodes appear only once their step has been played.
+ */
+function drawTree(root, revealedSteps) {
+  const svg = $("tree");
+  svg.innerHTML = "";
+  const W = 600, H = 230, pad = 28;
+
+  const leaves = [];
+  (function collectLeaves(n) { if (!n.left) leaves.push(n); else { collectLeaves(n.left); collectLeaves(n.right); } })(root);
+
+  let depth = 0;
+  (function measure(n, d) { depth = Math.max(depth, d); if (n.left) { measure(n.left, d + 1); measure(n.right, d + 1); } })(root, 0);
+
+  const gapX = leaves.length > 1 ? (W - 2 * pad) / (leaves.length - 1) : 0;
+  const gapY = depth > 0 ? (H - 2 * pad) / depth : 0;
+  let leafIndex = 0;
+
+  // Internal nodes already carry .order = the step that created them.
+  (function layout(n, d) {
+    if (!n.left) { n.x = pad + leafIndex++ * gapX; n.y = H - pad; return; }
+    layout(n.left, d + 1);
+    layout(n.right, d + 1);
+    n.x = (n.left.x + n.right.x) / 2;
+    n.y = pad + d * gapY;
+  })(root, 0);
+
+  const ns = "http://www.w3.org/2000/svg";
+  const visible = (n) => !n.left || n.order <= revealedSteps;
+
+  (function draw(n) {
+    if (!visible(n)) return;
+    if (n.left) {
+      [n.left, n.right].forEach((child) => {
+        if (!visible(child)) return;
+        const line = document.createElementNS(ns, "line");
+        line.setAttribute("x1", n.x); line.setAttribute("y1", n.y);
+        line.setAttribute("x2", child.x); line.setAttribute("y2", child.y);
+        line.setAttribute("class", "edge fade-in");
+        svg.appendChild(line);
+      });
+      draw(n.left); draw(n.right);
+    }
+    const g = document.createElementNS(ns, "g");
+    g.setAttribute("class", "fade-in");
+    const circle = document.createElementNS(ns, "circle");
+    circle.setAttribute("cx", n.x); circle.setAttribute("cy", n.y); circle.setAttribute("r", 19);
+    circle.setAttribute("class", "node-circle" + (n.left ? "" : " leaf"));
+    const label = document.createElementNS(ns, "text");
+    label.setAttribute("x", n.x); label.setAttribute("y", n.y);
+    label.setAttribute("class", "node-text");
+    label.textContent = n.label;
+    g.append(circle, label);
+    svg.appendChild(g);
+
+    if (n.left && n.value) {  // show the running value beside each operator node
+      const right = n.x < W * 0.72;
+      const tag = document.createElementNS(ns, "text");
+      tag.setAttribute("x", n.x + (right ? 26 : -26)); tag.setAttribute("y", n.y);
+      tag.setAttribute("class", "node-text fade-in");
+      tag.setAttribute("text-anchor", right ? "start" : "end");
+      tag.setAttribute("fill", "#6b7a89");
+      tag.textContent = "= " + n.value;
+      svg.appendChild(tag);
+    }
+  })(root);
+}
+
+/* ---------- wiring ---------- */
+function newHand() {
+  state.hand = dealHand();
+  renderHand();
+  $("expr").value = "";
+  $("verdict").className = "verdict";
+  $("solverNote").textContent = "Press “Find a solution” to watch the solver work.";
+  resetSolver(false);
+}
+
+$("check").addEventListener("click", checkAnswer);
+$("expr").addEventListener("keydown", (e) => { if (e.key === "Enter") checkAnswer(); });
+$("newCards").addEventListener("click", newHand);
+$("solve").addEventListener("click", runSolver);
+$("step").addEventListener("click", doStep);
+$("another").addEventListener("click", () => {
+  state.index = (state.index + 1) % state.solutions.length;
+  resetSolver(true);
+  $("solverNote").textContent = `Solution ${state.index + 1} of ${state.solutions.length}. Step through it below.`;
+  drawTree(state.solutions[state.index].tree, 0);
+});
+$("resetSolve").addEventListener("click", () => { resetSolver(true); drawTree(state.solutions[state.index].tree, 0); });
+$("auto").addEventListener("click", () => {
+  if (state.timer) { clearInterval(state.timer); state.timer = null; return; }
+  doStep();
+  state.timer = setInterval(doStep, 900);
+});
+
+buildKeys();
+newHand();
+</script>
+</body>
+</html>
