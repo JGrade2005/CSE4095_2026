@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
 """Benford's law on the leading digits of fast-growing integer sequences.
 
-    python3 benford.py                    # interactive menu
-    python3 benford.py 1 1000000          # sequence 1 (Fibonacci), n = 10^6
-    python3 benford.py catalan 5000 --show 3
+    python3 benford.py                    # list every sequence and its words
+    python3 benford.py fibonacci 1000000  # any word from the library selects one
+    python3 benford.py power2 1000000 --show 3
+    python3 benford.py factorial 1000000 --html chart.html
     python3 benford.py --file numbers.txt # real data, same analysis
+
+Every run prints the observed percentages beside the theoretical Benford ones,
+as a table and as a bar chart; --html writes the same comparison as a
+standalone HTML/SVG chart.  Everything is driven by arguments, nothing prompts.  Each sequence answers to
+several words (`fib`, `fibonacci`, `f`, `1` all mean the same thing); the full
+word library is in the registry below and `python3 benford.py --list` prints
+it.
 
 Benford's law: in many naturally growing data sets the leading digit d occurs
 with probability log10(1 + 1/d) -- 30.1% ones, 4.6% nines.  A sequence obeys it
@@ -56,6 +64,7 @@ import time
 from bisect import bisect_right
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal, localcontext
+from difflib import get_close_matches
 from functools import lru_cache
 from typing import Callable, Iterator, Sequence as Seq
 
@@ -590,6 +599,7 @@ class Sequence:
     number: int                       # menu number
     key: str                          # CLI name
     label: str                        # "Lucas numbers"
+    aliases: tuple[str, ...]          # every word that selects this sequence
     span: str                         # template, e.g. "L_1 .. L_{n}"
     growth: str                       # digit-count growth, for the menu
     term_name: Callable[[int], str]
@@ -664,6 +674,7 @@ def _lgamma10(x: float) -> float:
 SEQUENCES: tuple[Sequence, ...] = (
     Sequence(
         number=1, key="fib", label="Fibonacci numbers", span="F_1 .. F_{n}",
+        aliases=("fib", "fibs", "fibonacci", "f"),
         growth="~0.209*n digits", term_name=lambda k: f"F_{k}",
         family=ADD, seeds=(0, 1), single=fib,
         log_closed=fibonacci_logs, log_head=BINET_HEAD,
@@ -673,6 +684,7 @@ SEQUENCES: tuple[Sequence, ...] = (
     ),
     Sequence(
         number=2, key="pow2", label="Powers of two", span="2^1 .. 2^{n}",
+        aliases=("pow2", "power2", "powers2", "poweroftwo", "powersoftwo", "2^n"),
         growth="~0.301*n digits", term_name=lambda k: f"2^{k}",
         family=RATIO, ratio=lambda n: Ratio(num=lambda k: 2), single=lambda k: 1 << k,
         log_closed=lambda n, start, prec: power_logs(2, n, start, prec),
@@ -682,6 +694,7 @@ SEQUENCES: tuple[Sequence, ...] = (
     ),
     Sequence(
         number=3, key="fact", label="Factorials", span="1! .. {n}!",
+        aliases=("fact", "factorial", "factorials", "n!"),
         growth="~n*log10(n) digits", term_name=lambda k: f"{k}!",
         family=RATIO, ratio=lambda n: Ratio(num=lambda k: k), single=math.factorial,
         size_log10=lambda n: _lgamma10(n + 1),
@@ -690,6 +703,7 @@ SEQUENCES: tuple[Sequence, ...] = (
     ),
     Sequence(
         number=4, key="lucas", label="Lucas numbers", span="L_1 .. L_{n}",
+        aliases=("lucas", "luc", "lucasnumbers", "l"),
         growth="~0.209*n digits", term_name=lambda k: f"L_{k}",
         family=ADD, seeds=(2, 1), single=lucas,
         log_closed=lucas_logs, log_head=BINET_HEAD,
@@ -699,6 +713,7 @@ SEQUENCES: tuple[Sequence, ...] = (
     ),
     Sequence(
         number=5, key="catalan", label="Catalan numbers", span="C_1 .. C_{n}",
+        aliases=("catalan", "catalans", "cat"),
         growth="~0.602*n digits", term_name=lambda k: f"C_{k}",
         family=RATIO,
         # C_k = C_(k-1) * 2(2k-1) / (k+1); every division is exact
@@ -710,6 +725,8 @@ SEQUENCES: tuple[Sequence, ...] = (
     ),
     Sequence(
         number=6, key="binom", label="Central binomials", span="C(2,1) .. C({n2},{n})",
+        aliases=("binom", "binomial", "binomials", "centralbinomial",
+                 "centralbinomials", "choose"),
         growth="~0.602*n digits", term_name=lambda k: f"C({2 * k},{k})",
         family=RATIO,
         ratio=lambda n: Ratio(num=lambda k: 2 * (2 * k - 1), den=lambda k: k),
@@ -720,6 +737,7 @@ SEQUENCES: tuple[Sequence, ...] = (
     ),
     Sequence(
         number=7, key="primorial", label="Primorials", span="p_1# .. p_{n}#",
+        aliases=("primorial", "primorials", "prime", "primes", "p#"),
         growth="~n*log10(n) digits", term_name=lambda k: f"p_{k}#",
         family=RATIO, ratio=_primorial_ratio, single=primorial,
         size_log10=lambda n: sum(math.log10(p) for p in first_primes(n)),
@@ -728,6 +746,7 @@ SEQUENCES: tuple[Sequence, ...] = (
     ),
     Sequence(
         number=8, key="pow3", label="Powers of three", span="3^1 .. 3^{n}",
+        aliases=("pow3", "power3", "powers3", "powerofthree", "powersofthree", "3^n"),
         growth="~0.477*n digits", term_name=lambda k: f"3^{k}",
         family=RATIO, ratio=lambda n: Ratio(num=lambda k: 3), single=lambda k: 3 ** k,
         log_closed=lambda n, start, prec: power_logs(3, n, start, prec),
@@ -737,6 +756,7 @@ SEQUENCES: tuple[Sequence, ...] = (
     ),
     Sequence(
         number=9, key="triangular", label="Triangular numbers", span="T_1 .. T_{n}",
+        aliases=("triangular", "triangle", "triangles", "tri", "t"),
         growth="~2*log10(n) digits", term_name=lambda k: f"T_{k}",
         family=FORMULA, formula=lambda k: k * (k + 1) // 2,
         single=lambda k: k * (k + 1) // 2,
@@ -747,6 +767,7 @@ SEQUENCES: tuple[Sequence, ...] = (
     ),
     Sequence(
         number=10, key="squares", label="Squares", span="1^2 .. {n}^2",
+        aliases=("squares", "square", "sq", "n^2"),
         growth="~2*log10(n) digits", term_name=lambda k: f"{k}^2",
         family=FORMULA, formula=lambda k: k * k, single=lambda k: k * k,
         size_log10=lambda n: 2 * math.log10(n),
@@ -757,20 +778,53 @@ SEQUENCES: tuple[Sequence, ...] = (
 )
 
 BY_KEY = {s.key: s for s in SEQUENCES}
-BY_NUMBER = {str(s.number): s for s in SEQUENCES}
 METHODS = ("auto", "limb", "exact", "mant", "log")
 
 
+def normalize_word(text: str) -> str:
+    """Fold a command-line word to its lookup form.
+
+    Separators and case carry no meaning here, so `Powers-of-Two`,
+    `powers_of_two` and `powersoftwo` are the same request.  Symbols that ARE
+    the name (`n!`, `2^n`, `p#`) survive.
+    """
+    return text.strip().lower().translate(str.maketrans("", "", " -_."))
+
+
+def _build_word_library() -> dict[str, Sequence]:
+    """word -> sequence, from the menu number, the key and every alias.
+
+    Collisions are a registry bug, not a user error, so they fail at import.
+    """
+    library: dict[str, Sequence] = {}
+    for seq in SEQUENCES:
+        for word in (str(seq.number), seq.key, *seq.aliases):
+            word = normalize_word(word)
+            if word in library and library[word] is not seq:
+                raise AssertionError(
+                    f"word {word!r} claimed by both {library[word].key} and {seq.key}"
+                )
+            library[word] = seq
+    return library
+
+
+WORDS = _build_word_library()
+
+
 def resolve_sequence(text: str) -> Sequence:
-    """Accept a menu number or a key name."""
-    text = text.strip().lower()
-    if text in BY_NUMBER:
-        return BY_NUMBER[text]
-    if text in BY_KEY:
-        return BY_KEY[text]
-    raise ValueError(
-        f"unknown sequence {text!r}; use 1-{len(SEQUENCES)} or " + "/".join(BY_KEY)
-    )
+    """Look one word up in the library, with a suggestion when it misses."""
+    word = normalize_word(text)
+    if word in WORDS:
+        return WORDS[word]
+    close = get_close_matches(word, sorted(WORDS), n=3, cutoff=0.6)
+    hint = (f"closest words: {', '.join(close)}" if close
+            else "run with --list to see every word")
+    raise ValueError(f"unknown sequence {text!r}; {hint}")
+
+
+def words_for(seq: Sequence) -> str:
+    """Every word that selects `seq`, in the order a reader wants them."""
+    return ", ".join(dict.fromkeys((str(seq.number), seq.key, *seq.aliases)))
 
 
 def choose_method(seq: Sequence, n: int) -> str:
@@ -915,14 +969,308 @@ def timing_lines(n: int, elapsed: float, formatted: int = 0) -> list[str]:
     return lines
 
 
+# --------------------------------------------------------------------------
+# Visualization: terminal bar chart
+# --------------------------------------------------------------------------
+#
+# Two bars per digit -- observed against the Benford reference -- so the shape of
+# the distribution is readable without parsing nine pairs of numbers.  Both
+# series share one axis and one scale; the bars are drawn in eighth-of-a-cell
+# steps so a 0.1 pp difference is still visible at 46 columns wide.
+
+CHART_WIDTH = 46
+_BLOCK_PARTIALS = " \u258f\u258e\u258d\u258c\u258b\u258a\u2589"  # 1/8 .. 7/8 block
+
+
+@lru_cache(maxsize=1)
+def _bar_glyphs() -> tuple[str, str]:
+    """(full cell, partial cells) -- Unicode blocks where the terminal takes them.
+
+    A redirected or non-UTF-8 stdout would otherwise raise UnicodeEncodeError
+    halfway through a chart, so fall back to ASCII instead of crashing.
+    """
+    encoding = getattr(sys.stdout, "encoding", None) or "ascii"
+    try:
+        ("\u2588" + _BLOCK_PARTIALS).encode(encoding)
+    except (UnicodeEncodeError, LookupError):
+        return "#", ""
+    return "\u2588", _BLOCK_PARTIALS
+
+
+def bar(value: float, scale_max: float, width: int = CHART_WIDTH) -> str:
+    """One horizontal bar, `width` cells representing `scale_max`."""
+    full_glyph, partials = _bar_glyphs()
+    cells = max(0.0, value) / scale_max * width
+    whole = int(cells)
+    bar_text = full_glyph * whole
+    if partials:
+        eighths = int((cells - whole) * 8)
+        if eighths:
+            bar_text += partials[eighths]
+    elif cells - whole >= 0.5:
+        bar_text += full_glyph
+    return bar_text
+
+
+def chart_lines(counts: Seq[int], width: int = CHART_WIDTH) -> list[str]:
+    """Grouped bar chart of observed vs Benford percentages, for digits 1-9."""
+    total = sum(counts)
+    expected = benford_percentages()
+    observed = [100.0 * c / total for c in counts]
+    scale_max = max(max(observed), max(expected))
+
+    # The 10-space indent matches the "  d  obs |" row prefix, so the axis
+    # endpoints sit over the ends of the bars.
+    lines = [
+        "observed vs Benford  (obs = this run, ben = log10(1 + 1/d))",
+        f"{'':10}0{f'{scale_max:.0f}%':>{width - 1}}",
+    ]
+    for digit, (obs, exp) in enumerate(zip(observed, expected), start=1):
+        lines.append(f"  {digit}  obs |{bar(obs, scale_max, width):<{width}} {obs:6.2f}%")
+        lines.append(f"     ben |{bar(exp, scale_max, width):<{width}} {exp:6.2f}%")
+    return lines
+
+
+# --------------------------------------------------------------------------
+# Visualization: standalone HTML / SVG bar chart
+# --------------------------------------------------------------------------
+#
+# One self-contained file -- no libraries, no network -- so it opens anywhere and
+# can be handed in alongside the script.  Design choices worth stating:
+#
+#   * grouped bars, two series on ONE axis and one scale (a second y-axis would
+#     invent a relationship that is not in the data),
+#   * the two categorical hues are slots 1 and 2 of a pre-validated palette,
+#     used unmodified, with steps chosen per mode rather than flipped,
+#   * a 2px surface gap between adjacent bars instead of borders, 4px rounded
+#     data-ends anchored to the baseline, hairline solid gridlines,
+#   * a legend is always present, the extreme pair is direct-labelled, and every
+#     value is also in the table below, so nothing is reachable only by hover.
+
+# Categorical slots 1 (observed) and 2 (Benford reference), light and dark steps.
+SERIES_LIGHT = ("#2a78d6", "#eb6834")
+SERIES_DARK = ("#3987e5", "#d95926")
+
+HTML_STYLE = """
+:root {
+  color-scheme: light;
+  --surface: #fcfcfb; --card: #ffffff; --grid: #e6e5e1; --axis: #d6d5d0;
+  --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #78766f;
+  --series-1: #2a78d6; --series-2: #eb6834;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface: #141413; --card: #1a1a19; --grid: #2e2e2c; --axis: #3a3a37;
+    --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #9a988e;
+    --series-1: #3987e5; --series-2: #d95926;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface: #141413; --card: #1a1a19; --grid: #2e2e2c; --axis: #3a3a37;
+  --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #9a988e;
+  --series-1: #3987e5; --series-2: #d95926;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 32px 24px; background: var(--surface);
+  color: var(--text-primary);
+  font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+main { max-width: 820px; margin: 0 auto; }
+h1 { font-size: 19px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+p.sub { margin: 0 0 20px; color: var(--text-secondary); }
+.card {
+  background: var(--card); border: 1px solid var(--grid); border-radius: 10px;
+  padding: 18px 18px 8px; margin-bottom: 20px;
+}
+.legend { display: flex; gap: 18px; align-items: center; margin: 0 0 10px 4px;
+          color: var(--text-secondary); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.swatch { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+svg { display: block; width: 100%; height: auto; overflow: visible; }
+.grid-line { stroke: var(--grid); stroke-width: 1; }
+.axis-line { stroke: var(--axis); stroke-width: 1; }
+.tick { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.digit { fill: var(--text-secondary); font-size: 13px; }
+.axis-title { fill: var(--text-muted); font-size: 11px; }
+.value-label { fill: var(--text-secondary); font-size: 11px;
+               font-variant-numeric: tabular-nums; }
+.bar { transition: opacity 120ms ease; cursor: default; }
+.bar:hover, .bar:focus-visible { opacity: 0.78; outline: none; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+caption { text-align: left; color: var(--text-secondary); padding: 0 0 8px; }
+th, td { text-align: right; padding: 5px 10px; border-bottom: 1px solid var(--grid); }
+th:first-child, td:first-child { text-align: left; }
+thead th { color: var(--text-muted); font-weight: 500; font-size: 12px; }
+tbody tr:last-child td { border-bottom: none; }
+dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0 0 4px; }
+dt { color: var(--text-muted); } dd { margin: 0; font-variant-numeric: tabular-nums; }
+#tip {
+  position: fixed; transform: translate(-50%, -100%); pointer-events: none;
+  background: var(--text-primary); color: var(--surface); padding: 5px 9px;
+  border-radius: 6px; font-size: 12px; white-space: nowrap; z-index: 10;
+}
+"""
+
+HTML_SCRIPT = """
+const tip = document.getElementById('tip');
+for (const mark of document.querySelectorAll('[data-label]')) {
+  const show = () => {
+    const box = mark.getBoundingClientRect();
+    tip.textContent = mark.dataset.label;
+    tip.style.left = (box.left + box.width / 2) + 'px';
+    tip.style.top = (box.top - 8) + 'px';
+    tip.hidden = false;
+  };
+  const hide = () => { tip.hidden = true; };
+  mark.addEventListener('mouseenter', show);
+  mark.addEventListener('focus', show);
+  mark.addEventListener('mouseleave', hide);
+  mark.addEventListener('blur', hide);
+}
+"""
+
+
+def _rounded_bar(x: float, y: float, w: float, base: float, radius: float = 4.0) -> str:
+    """A bar path with rounded top corners only -- the baseline end stays square."""
+    r = min(radius, w / 2, max(0.0, base - y))
+    return (f"M{x:.1f} {base:.1f}V{y + r:.1f}Q{x:.1f} {y:.1f} {x + r:.1f} {y:.1f}"
+            f"H{x + w - r:.1f}Q{x + w:.1f} {y:.1f} {x + w:.1f} {y + r:.1f}"
+            f"V{base:.1f}Z")
+
+
+def svg_chart(counts: Seq[int]) -> str:
+    """Grouped bar chart: observed vs Benford percentage for digits 1-9."""
+    total = sum(counts)
+    expected = benford_percentages()
+    observed = [100.0 * c / total for c in counts]
+
+    width, height = 760, 320
+    left, right, top, bottom = 46, 12, 14, 44
+    plot_w = width - left - right
+    plot_h = height - top - bottom
+    base = top + plot_h
+
+    y_max = max(5 * math.ceil(max(max(observed), max(expected)) / 5), 5)
+    def y_of(pct: float) -> float:
+        return base - pct / y_max * plot_h
+
+    group_w = plot_w / 9
+    gap = 2.0                                   # surface gap between the pair
+    bar_w = min(30.0, (group_w - gap) / 2 - 6)
+
+    # Direct-label only the extreme: the digit that deviates most.
+    extreme = max(range(9), key=lambda i: abs(observed[i] - expected[i]))
+
+    parts = [f'<svg viewBox="0 0 {width} {height}" role="img" '
+             f'aria-label="Observed versus Benford first-digit percentages">']
+    for tick in range(0, y_max + 1, 5):
+        y = y_of(tick)
+        parts.append(f'<line class="grid-line" x1="{left}" y1="{y:.1f}" '
+                     f'x2="{left + plot_w}" y2="{y:.1f}"/>')
+        parts.append(f'<text class="tick" x="{left - 8}" y="{y + 4:.1f}" '
+                     f'text-anchor="end">{tick}%</text>')
+    parts.append(f'<line class="axis-line" x1="{left}" y1="{base}" '
+                 f'x2="{left + plot_w}" y2="{base}"/>')
+
+    for i, (obs, exp) in enumerate(zip(observed, expected)):
+        centre = left + group_w * (i + 0.5)
+        for series, (value, colour, name) in enumerate((
+                (obs, "var(--series-1)", "observed"),
+                (exp, "var(--series-2)", "Benford"))):
+            x = centre - gap / 2 - bar_w + series * (bar_w + gap)
+            label = f"digit {i + 1} · {name} {value:.2f}%"
+            parts.append(
+                f'<path class="bar" d="{_rounded_bar(x, y_of(value), bar_w, base)}" '
+                f'fill="{colour}" tabindex="0" data-label="{label}" '
+                f'aria-label="{label}"><title>{label}</title></path>')
+            if i == extreme:
+                parts.append(
+                    f'<text class="value-label" x="{x + bar_w / 2:.1f}" '
+                    f'y="{y_of(value) - 6:.1f}" text-anchor="middle">'
+                    f'{value:.1f}</text>')
+        parts.append(f'<text class="digit" x="{centre:.1f}" y="{base + 20}" '
+                     f'text-anchor="middle">{i + 1}</text>')
+
+    parts.append(f'<text class="axis-title" x="{left + plot_w / 2:.1f}" '
+                 f'y="{base + 38}" text-anchor="middle">leading digit</text>')
+    parts.append("</svg>")
+    return "\n".join(parts)
+
+
+def write_html_chart(path: str, title: str, subtitle: str,
+                     counts: Seq[int], facts: Seq[str]) -> None:
+    """Write the whole visualization -- chart, summary and table -- to one file."""
+    total = sum(counts)
+    expected = benford_percentages()
+    rows = "\n".join(
+        f"      <tr><td>{d}</td><td>{c}</td><td>{100.0 * c / total:.3f}</td>"
+        f"<td>{pct:.3f}</td><td>{100.0 * c / total - pct:+.3f}</td></tr>"
+        for d, (c, pct) in enumerate(zip(counts, expected), start=1))
+    summary = "\n".join(f"      <dt>{fact.split(':', 1)[0].strip()}</dt>"
+                        f"<dd>{fact.split(':', 1)[1].strip()}</dd>"
+                        for fact in facts if ":" in fact)
+    document = f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<style>{HTML_STYLE}</style>
+</head>
+<body>
+<main>
+  <h1>{title}</h1>
+  <p class="sub">{subtitle}</p>
+
+  <div class="card">
+    <div class="legend">
+      <span><i class="swatch" style="background:var(--series-1)"></i>observed</span>
+      <span><i class="swatch" style="background:var(--series-2)"></i>Benford, log10(1 + 1/d)</span>
+    </div>
+{svg_chart(counts)}
+  </div>
+
+  <div class="card">
+    <dl>
+{summary}
+      <dt>mean absolute deviation</dt><dd>{mean_abs_deviation(counts):.4f} pp</dd>
+      <dt>chi-square (8 dof)</dt><dd>{chi_square(counts):.4f}</dd>
+    </dl>
+  </div>
+
+  <div class="card">
+    <table>
+      <caption>Every value in the chart, for reading without colour or hover.</caption>
+      <thead><tr><th>digit</th><th>count</th><th>observed %</th>
+        <th>Benford %</th><th>diff (pp)</th></tr></thead>
+      <tbody>
+{rows}
+      </tbody>
+    </table>
+  </div>
+</main>
+<div id="tip" hidden></div>
+<script>{HTML_SCRIPT}</script>
+</body>
+</html>
+"""
+    with open(path, "w") as fh:
+        fh.write(document)
+    print(f"\nwrote {path}")
+
+
 def report(
     title: str,
     facts: list[str],
     counts: Seq[int],
     timings: list[str] | None = None,
     note: str = "",
+    chart: bool = True,
 ) -> str:
-    """The shared histogram / deviation / chi-square block."""
+    """The shared histogram / chart / deviation / chi-square block."""
     total = sum(counts)
     expected = benford_percentages()
     lines = ["", title, *facts, "",
@@ -934,8 +1282,10 @@ def report(
         diff = obs - pct
         worst = max(worst, abs(diff))
         lines.append(f"  {digit}   {count:11d}      {obs:6.2f}%      {pct:6.2f}%   {diff:+9.4f}")
+    lines += ["-" * 57]
+    if chart:
+        lines += ["", *chart_lines(counts), ""]
     lines += [
-        "-" * 57,
         f"max absolute deviation : {worst:.4f} percentage points",
         f"mean absolute deviation: {mean_abs_deviation(counts):.4f} pp"
         "   [Nigrini: <0.6 close, >1.5 nonconforming]",
@@ -956,7 +1306,7 @@ def report(
 
 def write_csv(path: str, counts: Seq[int]) -> None:
     total = sum(counts)
-    with open(path, "w") as fh:
+    with open(path, "w") as fh:  # OSError here is caught by main()
         fh.write("digit,count,observed_pct,benford_pct\n")
         for d, (c, pct) in enumerate(zip(counts, benford_percentages()), start=1):
             fh.write(f"{d},{c},{100.0 * c / total:.6f},{pct:.6f}\n")
@@ -970,6 +1320,8 @@ def run(
     show: int = 0,
     full: bool = False,
     csv_path: str | None = None,
+    chart: bool = True,
+    html_path: str | None = None,
 ) -> list[int]:
     """Generate, count, time and report one sequence.  Returns digit counts."""
     if method == "auto":
@@ -1014,16 +1366,25 @@ def run(
         raise AssertionError("a leading digit of 0 should be impossible")
     counts = counts[1:]
 
+    facts = [f"positive terms counted  : {sum(counts)}",
+             f"{seq.term_name(n)} = {last_sci}"]
     print(report(
         f"{seq.label} leading digits: {seq.span_text(n)}   (method: {method})",
-        [f"positive terms counted  : {sum(counts)}",
-         f"{seq.term_name(n)} = {last_sci}"],
+        facts,
         counts,
         timing_lines(n, elapsed, formatted),
         seq.note if seq.benford else "NOT expected to follow Benford -- " + seq.note,
+        chart,
     ))
     if csv_path:
         write_csv(csv_path, counts)
+    if html_path:
+        write_html_chart(
+            html_path,
+            f"{seq.label}: first-digit distribution",
+            f"{seq.span_text(n)} &middot; {n:,} terms &middot; {method} engine "
+            f"&middot; {seq.term_name(n)} = {last_sci}",
+            counts, facts)
     return counts
 
 
@@ -1109,7 +1470,8 @@ def leading_digit_text(token: str) -> int | None:
     return int(digits[0])
 
 
-def run_file(path: str, csv_path: str | None = None, show: int = 0) -> list[int]:
+def run_file(path: str, csv_path: str | None = None, show: int = 0,
+             chart: bool = True, html_path: str | None = None) -> list[int]:
     """Same counting and reporting, on numbers read from a file.
 
     This is the original application of Benford's law: one column of real
@@ -1143,84 +1505,71 @@ def run_file(path: str, csv_path: str | None = None, show: int = 0) -> list[int]
         return counts[1:]
 
     counts = counts[1:]
+    facts = [f"values counted          : {total}",
+             f"tokens skipped          : {skipped} (non-numeric or zero)"]
     print(report(
         f"Leading digits of numbers in {path}",
-        [f"values counted          : {total}",
-         f"tokens skipped          : {skipped} (non-numeric or zero)"],
+        facts,
         counts,
         timing_lines(total, elapsed),
         "real sample -- here chi-square and MAD are genuine tests, not just distances",
+        chart,
     ))
     if csv_path:
         write_csv(csv_path, counts)
+    if html_path:
+        write_html_chart(html_path, "First-digit distribution",
+                         f"{total:,} values read from {os.path.basename(path)}",
+                         counts, facts)
     return counts
 
 
 # --------------------------------------------------------------------------
-# Interactive menu
+# The word library
 # --------------------------------------------------------------------------
 
-MENU_HEADER = "Benford's law explorer -- leading digits of fast-growing sequences"
+BANNER = "Benford's law explorer -- leading digits of fast-growing sequences"
+
+EXAMPLES = """\
+examples:
+  python3 benford.py fibonacci 1000000
+  python3 benford.py power2 1000000 --show 3
+  python3 benford.py factorial 1000000 --csv digits.csv
+  python3 benford.py factorial 1000000 --html chart.html
+  python3 benford.py catalan 20000 --method limb --show 2 --full
+  python3 benford.py primorial --term 5000
+  python3 benford.py squares 1000000          # a control: does NOT fit Benford
+  python3 benford.py fib --verify 2000        # cross-check all four engines
+  python3 benford.py --file invoices.csv      # real data, same analysis\
+"""
 
 
-def _ask(prompt: str) -> str:
-    """input() that treats EOF/Ctrl-C as 'quit' rather than a traceback."""
-    try:
-        return input(prompt)
-    except (EOFError, KeyboardInterrupt):
-        print()
-        raise SystemExit(0)
+def print_library(stream=sys.stdout) -> None:
+    """Print every sequence with the words that select it.
 
+    This is the whole user interface: there is no menu and nothing prompts, so
+    the library has to say plainly which word runs which computation.
+    """
+    print(BANNER, file=stream)
+    print("\nusage: benford.py WORD N [options]   (benford.py --help for options)",
+          file=stream)
 
-def print_menu() -> None:
-    print("\nWhich sequence?")
-    print("  geometric or faster -- these converge to Benford's law")
-    for seq in SEQUENCES:
-        if seq.benford:
-            print(f"   {seq.number:2d}) {seq.label:<20} {seq.span_text():<18} {seq.growth}")
-    print("  polynomial growth -- controls that do NOT converge")
-    for seq in SEQUENCES:
-        if not seq.benford:
-            print(f"   {seq.number:2d}) {seq.label:<20} {seq.span_text():<18} {seq.growth}")
-    print("    d) numbers from a data file")
-    print("    q) quit")
-
-
-def interactive() -> int:
-    print(MENU_HEADER)
-    while True:
-        print_menu()
-        choice = _ask(f"select [1-{len(SEQUENCES)}, d, q]: ").strip().lower()
-        if choice in ("q", "quit", "exit"):
-            return 0
-        if choice == "d":
-            path = _ask("path to the data file: ").strip()
-            if not path:
+    for heading, wanted in (
+        ("\nsequences that converge to Benford's law:", True),
+        ("\npolynomial-growth controls -- these do NOT converge:", False),
+    ):
+        print(heading, file=stream)
+        for seq in SEQUENCES:
+            if seq.benford is not wanted:
                 continue
-            try:
-                run_file(path, show=5)
-            except OSError as exc:
-                print(f"  cannot read {path}: {exc}")
-            continue
+            print(f"  {seq.number:>2}  {seq.label:<20} {seq.span_text():<18} "
+                  f"{seq.growth}", file=stream)
+            print(f"      words: {words_for(seq)}", file=stream)
 
-        try:
-            seq = resolve_sequence(choice)
-        except ValueError as exc:
-            print(f"  {exc}")
-            continue
-
-        raw = _ask(f"how many terms of {seq.label.lower()} (n)? ").strip()
-        try:
-            n = int(raw)
-            if n < 1:
-                raise ValueError
-        except ValueError:
-            print("  n must be a positive integer")
-            continue
-
-        method = choose_method(seq, n)
-        print(f"\ncomputing {seq.span_text(n)} with the '{method}' engine ...")
-        run(seq, n, method=method, show=3)
+    print("\ndata files:", file=stream)
+    print("  --file PATH          leading digits of every number in a file",
+          file=stream)
+    print(f"\n{EXAMPLES}", file=stream)
 
 
 # --------------------------------------------------------------------------
@@ -1242,36 +1591,73 @@ what breaks as n grows:
 """
 
 
+def positive_int(text: str) -> int:
+    """argparse type: a whole number >= 1, reported in the user's own words."""
+    try:
+        value = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a whole number")
+    if value < 1:
+        raise argparse.ArgumentTypeError(f"{value} is not >= 1")
+    return value
+
+
+def non_negative_int(text: str) -> int:
+    try:
+        value = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a whole number")
+    if value < 0:
+        raise argparse.ArgumentTypeError(f"{value} is negative")
+    return value
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description="Leading-digit / Benford analysis of ten integer sequences, "
-                    "or of any file of numbers.  Run with no arguments for an "
-                    "interactive menu.",
+                    "or of any file of numbers.  Every run is driven by "
+                    "arguments; nothing prompts.  Run with no arguments (or "
+                    "--list) to print the library of words and what each one "
+                    "computes.",
         epilog=EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument("sequence", nargs="?",
-                   help="menu number 1-10 or name: " + ", ".join(BY_KEY))
-    p.add_argument("n", type=int, nargs="?", help="number of terms to generate")
+                   help="which sequence to run -- any word from the library, "
+                        "e.g. fibonacci, power2, factorial, catalan, 1, 2, 3")
+    p.add_argument("n", type=positive_int, nargs="?",
+                   help="number of terms to generate (>= 1)")
     p.add_argument("--file", metavar="PATH",
                    help="analyse numbers from a file instead of a sequence")
     p.add_argument("--method", choices=METHODS, default="auto",
                    help="auto picks limb / exact / mant by n (see module docstring)")
-    p.add_argument("--show", type=int, default=0, metavar="K",
+    p.add_argument("--show", type=non_negative_int, default=0, metavar="K",
                    help="print the first K and last K terms in scientific notation")
     p.add_argument("--full", action="store_true",
                    help="with --show, also print every digit (forces an exact engine)")
-    p.add_argument("--term", type=int, metavar="K",
+    p.add_argument("--term", type=positive_int, metavar="K",
                    help="print term K exactly, in full, then exit")
     p.add_argument("--csv", metavar="PATH", help="write digit,count,observed,benford")
-    p.add_argument("--verify", type=int, metavar="M",
+    p.add_argument("--html", metavar="PATH",
+                   help="write a standalone HTML bar chart of the two distributions")
+    p.add_argument("--no-chart", dest="chart", action="store_false",
+                   help="suppress the terminal bar chart (keep the numeric table)")
+    p.add_argument("--verify", type=positive_int, metavar="M",
                    help="cross-check all four engines on the first M terms, then exit")
+    p.add_argument("--list", action="store_true",
+                   help="print every sequence with the words that select it, then exit")
     args = p.parse_args(argv)
+
+    if args.list:
+        args.seq = None
+        return args
 
     if args.file:
         args.seq = None
         return args
     if args.sequence is None:
+        # No word given: show the library rather than guessing or prompting.
+        args.list = True
         args.seq = None
         return args
     try:
@@ -1280,27 +1666,45 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         p.error(str(exc))
     if args.n is None and args.term is None and args.verify is None:
         p.error("n is required unless --term or --verify is given")
-    if args.n is not None and args.n < 1:
-        p.error("n must be >= 1")
     return args
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = parse_args(argv)
-    if args.file:
-        try:
-            run_file(args.file, args.csv, args.show)
-        except OSError as exc:
-            print(f"cannot read {args.file}: {exc}", file=sys.stderr)
-            return 1
+    try:
+        return dispatch(parse_args(argv))
+    except OSError as exc:
+        # A bad path for --file, --csv or --html is user error, not a crash.
+        print(f"file error: {exc}", file=sys.stderr)
+        return 1
+
+
+def check_writable(path: str | None) -> None:
+    """Fail on an unusable output path now, not after a ten-minute run."""
+    if path is None:
+        return
+    directory = os.path.dirname(os.path.abspath(path))
+    if not os.path.isdir(directory):
+        raise OSError(f"no such directory: {directory}")
+    if not os.access(directory, os.W_OK):
+        raise OSError(f"directory is not writable: {directory}")
+
+
+def dispatch(args: argparse.Namespace) -> int:
+    if args.list:
+        print_library()
         return 0
-    if args.seq is None:
-        return interactive()
+    check_writable(args.csv)
+    check_writable(args.html)
+
+    if args.file:
+        run_file(args.file, args.csv, args.show, args.chart, args.html)
+        return 0
     if args.term:
         return print_single_term(args.seq, args.term)
     if args.verify:
         return verify(args.seq, args.verify)
-    run(args.seq, args.n, args.method, args.show, args.full, args.csv)
+    run(args.seq, args.n, args.method, args.show, args.full, args.csv,
+        args.chart, args.html)
     return 0
 
 
