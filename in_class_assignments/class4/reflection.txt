@@ -1,0 +1,91 @@
+
+For this assignment, I really wanted to test the length that an AI chat model can go. For this assignment, I set my model to Opus 5.1 in claude, on max usage setting.
+I wanted to stress test how well claude could handle one prompt. 
+
+I found that including a master prompt, it helped give the AI model a basis to go back to, and some more context regarding it's goal. This resulted in lower completion time, and less mistakes. 
+
+The prompt I used was:
+
+--------------------------------------------------------------------------------------------------------------
+
+Master Prompt
+
+System Prompt:
+
+
+You are a senior software engineer.
+Write clean, readable, and maintainable code.
+Prefer simple solutions over unnecessary complexity.
+Explain IMPORTANT decisions briefly
+Always consider edge cases and potential bugs where applicable
+When appropriate, include time and space complexity
+
+
+WHO AM I
+I’m a computer science student preparing for a software engineering/cybersecurity/AI based career
+MY EXPERIENCE
+I have basic general programming experience and python, still improving generally. 
+MY GOALS
+I want to become a strong software engineer / developer, and build real-world projects preparing for technical interviews
+MY PREFERENCES
+I don’t want too much word vomit explanations on design decisions, just general choices and 
+
+
+In this assignment, you will use vibe coding to build two versions of the classic Card Game 24:
+1 A command-line program written in Python
+2 A single-user static web application
+
+card game considers 4 cards, from A - K, where A = 1, 2 = 2, ... , 10 = 10, J = 11, Q = 12, K = 13. You only have access to 4 operators, +, -, *, and division. 
+
+The objective is to construct an arithmetic expression whose value is 24.
+You may use +, -, *, /, and parentheses. Each of the four card values must be used exactly once
+
+Create a command-line Python program named card24.py.
+Generating the Cards
+Your program should randomly generate four cards. You may model an actual 52-card deck or simply
+generate four appropriate card values. Decide which representation makes the most sense for your
+program.
+Display the four cards clearly to the user
+
+Your Python program should also be capable of determining whether a given set of four cards has a
+solution.
+The basic idea is to systematically consider:
+• different arrangements of the four numbers;
+• different choices of +, -, *, and /;
+• different ways of grouping the operations with parentheses.
+One way to think about the different groupings is through binary expression trees. There are five basic
+tree shapes for an expression involving four values and three binary operators.
+
+Part 3 - Static Web Version
+After completing the Python version, use vibe coding to create a single-user web version of Card Game
+24.
+The application must be a static webpage. It should run entirely in the browser and should not require a
+web server, database, Flask, Node.js, or other backend.
+A user should be able to open the HTML file directly in a browser.
+At minimum, the page should:
+• randomly generate four cards;
+• display the cards visually;
+• allow the player to type an arithmetic expression;
+• provide a button to check the expression;
+• determine whether the expression evaluates to 24;
+• verify that the four displayed card values were each used exactly once;
+• clearly report whether the answer is correct.
+Your webpage should also provide a way to generate a new set of cards.
+
+Part 4 - Use the Solver in the Web Application
+Reuse the ideas from your Python solver in the JavaScript version.
+Your webpage should be capable of finding a solution for the four displayed cards
+
+Also for the solver, make it visually interesting and a bit interactive
+
+File structure should look like this :
+
+card24.py
+card24.html
+--------------------------------------------------------------------------------------------------------------
+
+This prompt covered most of the aspects of the program, and gave it a little more push to go for readable code, meaningful comments, and helpful visualizations.
+
+I notice that AI/Claude in this instance, still has some issues with User INterface. With some of the text font size being too big for the generated shapes, and also the AI will mostly just follow what you prompt it to do. 
+One thing I forgot to include in the initial prompt, was the requirement that unsolvable hands are not given, which the AI did not implement on it's own without my prompting, which would've been a logical implementation, or an ask for an implementation. 
+Catching this error, I gave a new prompt to address that issue. 

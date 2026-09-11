@@ -118,7 +118,8 @@
 <div class="wrap">
   <header>
     <h1>Card Game 24</h1>
-    <p>Use all four cards exactly once with + − × ÷ and parentheses to make 24. A=1, J=11, Q=12, K=13.</p>
+    <p>Use all four cards exactly once with + − × ÷ and parentheses to make 24. A=1, J=11, Q=12, K=13.<br>
+       Every hand dealt has at least one solution.</p>
     <div class="streak">Solved: <span id="score">0</span> &nbsp;·&nbsp; Streak: <span id="streak">0</span></div>
   </header>
 
@@ -274,11 +275,12 @@ function canonical(node) {
   return `(${parts[0]}${node.label}${parts[1]})`;
 }
 
-function findSolutions(values) {
+function findSolutions(values, firstOnly = false) {
   const found = [];
   const seen = new Set();
 
   function search(items, steps) {
+    if (firstOnly && found.length) return;
     if (items.length === 1) {
       if (!items[0].value.eq(TARGET)) return;
       const key = canonical(items[0].tree);
@@ -289,8 +291,8 @@ function findSolutions(values) {
       found.push({ text: stripOuter(items[0].text), tree: items[0].tree, steps: ordered });
       return;
     }
-    for (let i = 0; i < items.length; i++) {
-      for (let j = i + 1; j < items.length; j++) {
+    for (let i = 0; i < items.length && !(firstOnly && found.length); i++) {
+      for (let j = i + 1; j < items.length && !(firstOnly && found.length); j++) {
         const rest = items.filter((_, k) => k !== i && k !== j);
         for (const op of OPS) {
           for (const flipped of (op.commutative ? [false] : [false, true])) {
@@ -299,6 +301,7 @@ function findSolutions(values) {
             steps.push(merged.step);
             search(rest.concat([merged]), steps);
             steps.pop();
+            if (firstOnly && found.length) return;
           }
         }
       }
@@ -311,18 +314,38 @@ function findSolutions(values) {
 
 const stripOuter = (s) => (s.startsWith("(") && s.endsWith(")") ? s.slice(1, -1) : s);
 
+const hasSolution = (values) => findSolutions(values, true).length > 0;
+
 /* ------------------------------------------------------------------ *
  * Deck
  * ------------------------------------------------------------------ */
 const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 const SUITS = [{ s: "♠", red: false }, { s: "♥", red: true }, { s: "♦", red: true }, { s: "♣", red: false }];
 
+/** Raw deal off a shuffled 52-card deck. */
 function dealHand() {
   const deck = [];
   RANKS.forEach((rank, i) => SUITS.forEach((suit) => deck.push({ rank, suit: suit.s, red: suit.red, value: i + 1 })));
   const hand = [];
   for (let k = 0; k < 4; k++) hand.push(deck.splice(Math.floor(Math.random() * deck.length), 1)[0]);
   return hand;
+}
+
+/**
+ * Deal a hand the player can actually win.
+ *
+ * ~75% of hands are solvable (1362 of the 1820 distinct value combinations),
+ * so re-dealing until one is averages ~1.3 deals and stays well under a
+ * millisecond. Rejection sampling keeps the natural card distribution, which
+ * a precomputed list of solvable hands would not; discarded hands are never
+ * shown, so the player just sees one deal.
+ */
+function dealPlayableHand(maxAttempts = 500) {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const hand = dealHand();
+    if (hasSolution(hand.map((c) => c.value))) return hand;
+  }
+  return dealHand();  // unreachable in practice
 }
 
 /* ------------------------------------------------------------------ *
@@ -569,7 +592,7 @@ function drawTree(root, revealedSteps) {
 
 /* ---------- wiring ---------- */
 function newHand() {
-  state.hand = dealHand();
+  state.hand = dealPlayableHand();
   renderHand();
   $("expr").value = "";
   $("verdict").className = "verdict";

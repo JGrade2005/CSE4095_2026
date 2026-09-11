@@ -52,7 +52,24 @@ def build_deck() -> list[Card]:
 
 
 def deal(count: int = 4) -> list[Card]:
+    """Deal `count` distinct cards off a shuffled deck."""
     return random.sample(build_deck(), count)
+
+
+def deal_playable(count: int = 4, max_attempts: int = 500) -> list[Card]:
+    """Deal a hand that is guaranteed to have a solution.
+
+    About 75% of hands are solvable (1362 of the 1820 distinct value
+    combinations), so re-dealing until one is averages ~1.3 deals. Rejection
+    sampling like this keeps the natural card distribution intact, which
+    precomputing a list of solvable hands would not. The player is never told
+    a hand was discarded.
+    """
+    for _ in range(max_attempts):
+        cards = deal(count)
+        if solve([card.value for card in cards]):
+            return cards
+    raise RuntimeError("no solvable hand found")  # unreachable for count == 4
 
 
 def render_cards(cards: list[Card]) -> str:
@@ -262,10 +279,11 @@ def play(seed: int | None = None) -> None:
 
     print("=" * 46)
     print(" Card Game 24 - make 24 from four cards")
+    print(" Every hand dealt has at least one solution.")
     print("=" * 46)
     print(HELP)
 
-    cards = deal()
+    cards = deal_playable()
     while True:
         print(f"\nYour cards: {'  '.join(str(c) for c in cards)}")
         print(render_cards(cards))
@@ -285,7 +303,7 @@ def play(seed: int | None = None) -> None:
             print("Goodbye.")
             return
         if command in ("n", "new"):
-            cards = deal()
+            cards = deal_playable()
             continue
         if command in ("h", "help", "?"):
             print(HELP)
@@ -298,7 +316,7 @@ def play(seed: int | None = None) -> None:
         correct, message = check_answer(entry, cards)
         print(f"  {message}")
         if correct:
-            cards = deal()
+            cards = deal_playable()
 
 
 # --------------------------------------------------------------------------- #
