@@ -137,7 +137,8 @@ body {
 
 .stage svg { display: block; width: 100%; height: 100%; touch-action: none; }
 
-.stage.is-aiming { cursor: crosshair; }
+/* While a hand is carried, it replaces the pointer - so the real one hides. */
+.stage.is-carrying { cursor: none; }
 
 /* Sprites are drawn at 32x40 and blown up by a whole number, so every
    pixel stays square. Without this the browser smooths them into mush. */
@@ -197,14 +198,6 @@ body {
 }
 
 .spark { fill: none; stroke: var(--torch); stroke-width: 3; stroke-linecap: round; }
-
-.aim-line {
-  fill: none;
-  stroke: var(--torch);
-  stroke-width: 3;
-  stroke-dasharray: 9 7;
-  opacity: .9;
-}
 
 .thinking-note {
   font-family: var(--mono);

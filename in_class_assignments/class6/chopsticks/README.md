@@ -22,17 +22,32 @@ horizon, the game is a tie.
 
 ## Controls
 
+Picking a hand:
+
 | Input | What it does |
 | --- | --- |
-| <kbd>←</kbd> <kbd>→</kbd> | Highlight one of your two hands |
-| <kbd>Enter</kbd> | Pick up the highlighted hand |
-| drag | Drag from your hand onto a computer hand to attack it |
-| <kbd>←</kbd> <kbd>→</kbd> (after Enter) | Scrub through every legal redistribution |
-| <kbd>Enter</kbd> (after scrubbing) | Commit the split |
-| <kbd>Esc</kbd> | Put the hand back down |
+| <kbd>←</kbd> <kbd>→</kbd> | Light up one of your two hands |
+| <kbd>Enter</kbd> | Pick that hand up |
 
-Scrubbing previews the split on your hands before you commit, so you can see the
-arrangement you are about to take.
+Once a hand is up, it is in your control and there are two ways to use it.
+
+**With the mouse** — the hand follows your cursor; the cursor *is* the hand, and
+your arm stretches out behind it. Click a computer hand to strike it.
+
+**With the keyboard** — <kbd>↑</kbd> reaches across the table and <kbd>↓</kbd>
+comes back, so <kbd>←</kbd> <kbd>→</kbd> means "pick a target" or "slide fingers"
+depending on which side of the table you are working on:
+
+| Input | Reaching across (after <kbd>↑</kbd>) | On your own hands |
+| --- | --- | --- |
+| <kbd>←</kbd> <kbd>→</kbd> | Switch which computer hand you are aiming at | Scrub through every legal redistribution |
+| <kbd>Enter</kbd> | Strike | Commit the split |
+| <kbd>Esc</kbd> | Back off | Put the hand down |
+
+Whichever input you used last is the one in charge, so the two never fight. While
+aiming, the status line does the arithmetic for you — `3 + 2 = knocked out` — so
+you can see what a strike does before committing to it. Scrubbing previews the
+split on your hands the same way.
 
 The stage is a dark room. Only the hand in play sits in the torchlight, framed by
 corner brackets — everything else falls away into shadow, so what you are about to

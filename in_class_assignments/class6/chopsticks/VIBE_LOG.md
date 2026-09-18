@@ -164,6 +164,33 @@ Scale was chosen so both depths are whole-number multiples of the sprite grid �
 4x near, 2x far. Any other ratio gives uneven pixel sizes and the art stops
 reading as pixel art.
 
+## 9. Two ways to play the same turn
+
+Dragging was replaced with carrying: once a hand is picked up it follows the
+cursor outright, and because the arm path is drawn from a fixed root to the live
+wrist position, the arm stretches out to wherever the hand has gone for free. The
+real cursor is hidden while carrying, so the hand *is* the pointer.
+
+Adding keyboard attacks meant ← → had to mean two different things, since they
+already scrubbed splits. Resolved spatially rather than with a mode key: the
+computer's hands are literally up the screen, so ↑ reaches across the table and ↓
+comes back, and ← → then means "pick a target" or "slide fingers" depending on
+which side of the table you are on.
+
+Pointer and keyboard would otherwise fight over where the hand is, so a
+`inputMode` flag tracks whichever was used last and that one wins. Moving the
+mouse cancels an aim; pressing ↑ drops the cursor.
+
+Two details worth recording:
+
+- **The attack animation had to stop assuming it started from home.** It tweened
+  `ox` from 0, which was fine when the hand never left its mark, but now the hand
+  may already be most of the way across. It captures its current offset instead,
+  and flattens the arc as there is less ground left to cover.
+- **`pointerdown` cannot require a prior `pointermove`.** A first click, and every
+  touch, arrives with no move before it. The handler picks the hand up itself
+  rather than assuming the pointer path already ran.
+
 ---
 
 ## What I would revisit

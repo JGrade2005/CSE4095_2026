@@ -300,8 +300,10 @@
     splits: [],
     splitIndex: 0,
     preview: null,
-    dragging: false,
-    hoverTarget: null,
+    target: null,       // computer hand currently being aimed at
+    aim: null,          // non-null while aiming with the keyboard
+    inputMode: "keys",  // whichever of pointer / keys was used last
+    cursor: null,       // pointer position, in scene coordinates
     spotlight: null,    // slot key under the torch
     lightPair: null,    // two slots lit together, during a split
     analysis: null,
@@ -333,6 +335,24 @@
   }
 
   const humanHands = () => (ui.humanRole === "A" ? ui.state.a : ui.state.b);
+  const selectedKey = () => slotFor(ui.humanRole, ui.focus);
+
+  /** The computer's hands still in play, and so attackable. */
+  const liveTargets = () => ["fL", "fR"].filter((k) => countOf(k) > 0);
+
+  /** The hand riding on the cursor, if there is one. */
+  function carriedKey() {
+    return ui.phase === "act" && ui.inputMode === "pointer" && ui.cursor
+      ? selectedKey() : null;
+  }
+
+  /** Put both of your hands back on their marks. */
+  function resetCarry() {
+    for (const key of ["nL", "nR"]) {
+      const d = drift[key];
+      d.ox = d.oy = d.extra = d.arot = 0;
+    }
+  }
 
   /** Whether this hand is inside the torch pool, and so drawn in full colour. */
   function isLit(key) {
@@ -399,7 +419,7 @@
       const cls = ["hand"];
       if (n === 0) cls.push("is-dead");
       if (isNearSlot(key) && ui.focus === indexOf(key) && (ui.phase === "choose" || ui.phase === "act")) cls.push("is-focus");
-      if (!isNearSlot(key) && ui.hoverTarget === key) cls.push("is-target");
+      if (!isNearSlot(key) && ui.target === key) cls.push("is-target");
       layers.push(`<g class="${cls.join(" ")}">${badge(key, n)}</g>`);
     }
 
@@ -464,7 +484,7 @@
       const px = SLOTS[key].px;
       if (isNearSlot(key) && ui.focus === indexOf(key) && (ui.phase === "choose" || ui.phase === "act")) {
         g.innerHTML = reticleMarkup(px, "");
-      } else if (!isNearSlot(key) && ui.hoverTarget === key) {
+      } else if (!isNearSlot(key) && ui.target === key) {
         g.innerHTML = reticleMarkup(px, "is-target");
       } else {
         g.innerHTML = "";
@@ -552,8 +572,10 @@
   function loop(t) {
     if (!reduceMotion) {
       const time = t / 1000;
+      const carried = carriedKey();
       for (const key of ORDER) {
         const d = drift[key], near = isNearSlot(key);
+        if (key === carried) { d.dx = d.dy = d.rot = 0; continue; }
         const amp = near ? 13 : 7;
         d.dy = Math.sin(time * 0.72 + d.phase) * amp;
         d.dx = Math.cos(time * 0.51 + d.phase * 1.4) * (amp * 0.35);
@@ -626,14 +648,20 @@
     const shrink = b.px / a.px - 1;
 
     ui.spotlight = fromKey;
-    ui.hoverTarget = toKey;
+    ui.target = toKey;
     syncSprites();
     syncReticles();
 
+    // The hand may already be part way across - carried on the cursor, or
+    // posed by the keyboard - so the swing starts from wherever it is, and
+    // the arc flattens out as there is less ground left to cover.
+    const fromOx = drift[fromKey].ox, fromOy = drift[fromKey].oy;
+    const arc = Math.max(34, 90 - Math.abs(fromOy) * 0.4);
+
     await tween(520, (p) => {
       const e = easeInOut(p);
-      drift[fromKey].ox = dx * e;
-      drift[fromKey].oy = dy * e + Math.sin(p * Math.PI) * -90;
+      drift[fromKey].ox = fromOx + (dx - fromOx) * e;
+      drift[fromKey].oy = fromOy + (dy - fromOy) * e - Math.sin(p * Math.PI) * arc;
       drift[fromKey].extra = shrink * e + Math.sin(p * Math.PI) * 0.12;
       drift[fromKey].arot = Math.sin(p * Math.PI) * 14;
       positionAll();
@@ -663,7 +691,7 @@
 
     drift[fromKey].ox = drift[fromKey].oy = drift[fromKey].extra = drift[fromKey].arot = 0;
     drift[toKey].ox = 0;
-    ui.hoverTarget = null;
+    ui.target = null;
     syncReticles();
   }
 
@@ -712,6 +740,9 @@
   async function playMove(move) {
     ui.phase = "animating";
     ui.preview = null;
+    ui.aim = null;
+    ui.cursor = null;
+    stage.classList.remove("is-carrying");
     render();
 
     if (move.type === "attack") await animateAttack(move);
@@ -728,8 +759,12 @@
   function beginHumanTurn() {
     ui.phase = "choose";
     ui.preview = null;
-    ui.hoverTarget = null;
+    ui.target = null;
+    ui.aim = null;
+    ui.cursor = null;
     ui.lightPair = null;
+    stage.classList.remove("is-carrying");
+    resetCarry();
     const hands = humanHands();
     if (hands[ui.focus] === 0 && hands[1 - ui.focus] > 0) ui.focus = 1 - ui.focus;
     ui.spotlight = slotFor(ui.humanRole, ui.focus);
@@ -760,6 +795,10 @@
   function endGame(result) {
     ui.phase = "over";
     ui.preview = null;
+    ui.target = null;
+    ui.aim = null;
+    ui.cursor = null;
+    stage.classList.remove("is-carrying");
     ui.spotlight = null;
     ui.lightPair = null;
     render();
@@ -794,16 +833,27 @@
     ui.splits = Game.splitOptions(ui.state);
     ui.splitIndex = ui.splits.findIndex((o) => o.isCurrent);
     ui.preview = null;
-    ui.spotlight = slotFor(ui.humanRole, ui.focus);
+    ui.aim = null;
+    ui.target = null;
+    ui.cursor = null;
+    ui.spotlight = selectedKey();
+    resetCarry();
     render();
+    announceIdle();
+  }
+
+  function announceIdle() {
     setStatus(
-      `<b>${SLOTS[slotFor(ui.humanRole, ui.focus)].tag}</b> is up. ` +
-      `Drag it onto one of the computer's hands to attack, or use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> ` +
-      `to slide fingers between your own hands. <kbd>Esc</kbd> to back out.`
+      `<b>${SLOTS[selectedKey()].tag}</b> is up &mdash; move the mouse and the hand goes with it, ` +
+      `then click a computer hand to strike. Or <kbd>&uarr;</kbd> to aim with the keyboard, ` +
+      `<kbd>&larr;</kbd> <kbd>&rarr;</kbd> to slide fingers between your own hands. <kbd>Esc</kbd> to back out.`
     );
   }
 
   function scrubSplit(step) {
+    ui.inputMode = "keys";
+    if (ui.aim) stopAiming();
+    if (ui.cursor) dropCursor();
     if (ui.splits.length <= 1) {
       setStatus("No legal way to redistribute from here &mdash; drag onto a hand to attack instead.");
       return;
@@ -849,82 +899,169 @@
     }
 
     if (ui.phase === "act") {
-      if (e.key === "ArrowLeft") { e.preventDefault(); scrubSplit(-1); }
-      else if (e.key === "ArrowRight") { e.preventDefault(); scrubSplit(1); }
-      else if (e.key === "Enter") { e.preventDefault(); commitSplit(); }
-      else if (e.key === "Escape") { e.preventDefault(); beginHumanTurn(); }
+      // Up reaches across the table, down comes back to your own hands, so
+      // the same left/right keys mean "pick a target" or "slide fingers"
+      // depending on which side of the table you are working on.
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        startAiming();
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (ui.aim) {
+          stopAiming();
+          setStatus(`Back on your own hands. <kbd>&larr;</kbd> <kbd>&rarr;</kbd> slides fingers between them, <kbd>&uarr;</kbd> reaches across again.`);
+        }
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault();
+        const step = e.key === "ArrowLeft" ? -1 : 1;
+        if (ui.aim) switchTarget(step); else scrubSplit(step);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (ui.aim) attack(ui.aim); else commitSplit();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        if (ui.aim) { stopAiming(); announceIdle(); } else beginHumanTurn();
+      }
     }
   });
 
-  /* ------------------------------------------------ Drag to attack */
+  /* ------------------------------------------------- Aim and strike */
   function toScene(evt) {
     const ctm = scene.getScreenCTM();
     if (!ctm) return { x: 0, y: 0 };
     return new DOMPoint(evt.clientX, evt.clientY).matrixTransform(ctm.inverse());
   }
 
+  /** Nearest computer hand to a scene point, if it is a legal target. */
   function targetAt(p) {
     if (humanHands()[ui.focus] === 0) return null;
-    let best = null, bestD = 120;
-    for (const key of ["fL", "fR"]) {
-      if (countOf(key) === 0) continue;
+    let best = null, bestD = 130;
+    for (const key of liveTargets()) {
       const c = livePos(key);
-      const d = Math.hypot(p.x - c.x, p.y - (c.y - 30));
+      const d = Math.hypot(p.x - c.x, p.y - (c.y - 15 * SLOTS[key].px));
       if (d < bestD) { bestD = d; best = key; }
     }
     return best;
   }
 
-  function drawAim(p) {
-    const fx = scene.querySelector("#fx");
-    if (!fx) return;
-    const from = livePos(slotFor(ui.humanRole, ui.focus));
-    fx.innerHTML = `<path class="aim-line" d="M ${from.x} ${from.y - 60} Q ${(from.x + p.x) / 2} ${(from.y + p.y) / 2 - 80} ${p.x} ${p.y}"/>`;
+  function setTarget(key) {
+    if (key === ui.target) return;
+    ui.target = key;
+    ui.lightPair = key ? [selectedKey(), key] : null;
+    syncSprites();
+    syncReticles();
   }
 
-  stage.addEventListener("pointerdown", (e) => {
-    if (ui.phase !== "act") return;
-    ui.dragging = true;
-    stage.classList.add("is-aiming");
-    stage.setPointerCapture?.(e.pointerId);
-    drawAim(toScene(e));
-  });
-
-  stage.addEventListener("pointermove", (e) => {
-    if (!ui.dragging) return;
-    const p = toScene(e);
-    drawAim(p);
-    const target = targetAt(p);
-    if (target !== ui.hoverTarget) {
-      ui.hoverTarget = target;
-      syncReticles();
-    }
-  });
-
-  stage.addEventListener("pointerup", (e) => {
-    if (!ui.dragging) return;
-    ui.dragging = false;
-    stage.classList.remove("is-aiming");
-    const p = toScene(e);
-    const target = targetAt(p);
-    const fx = scene.querySelector("#fx");
-    if (fx) fx.innerHTML = "";
-
-    ui.hoverTarget = null;
-    syncReticles();
-
-    if (!target) {
-      setStatus("Release on one of the computer's hands to attack it, or scrub with <kbd>&larr;</kbd> <kbd>&rarr;</kbd> to split.");
-      return;
-    }
-
-    const move = Game.findAttack(ui.state, ui.focus, indexOf(target));
+  function attack(targetKey) {
+    const move = Game.findAttack(ui.state, ui.focus, indexOf(targetKey));
     if (!move) {
       setStatus("That is not a legal attack &mdash; a hand that is out can neither hit nor be hit.");
       return;
     }
     playMove(move);
+  }
+
+  /* --- pointer: the selected hand becomes the cursor ------------------ */
+
+  function carryTo(p) {
+    const key = selectedKey(), s = SLOTS[key];
+    drift[key].ox = p.x - s.x;
+    drift[key].oy = p.y - s.y + 15 * s.px;
+  }
+
+  function dropCursor() {
+    stage.classList.remove("is-carrying");
+    ui.cursor = null;
+    setTarget(null);
+    resetCarry();
+    positionAll();
+  }
+
+  stage.addEventListener("pointermove", (e) => {
+    if (ui.phase !== "act") return;
+    if (ui.aim) stopAiming();
+    ui.inputMode = "pointer";
+    ui.cursor = toScene(e);
+    carryTo(ui.cursor);
+    setTarget(targetAt(ui.cursor));
+    stage.classList.add("is-carrying");
+    positionAll();
   });
+
+  // Also picks the hand up: a first click, or a touch, arrives with no
+  // preceding pointermove, and should still work.
+  stage.addEventListener("pointerdown", (e) => {
+    if (ui.phase !== "act") return;
+    if (ui.aim) stopAiming();
+    ui.inputMode = "pointer";
+    ui.cursor = toScene(e);
+    carryTo(ui.cursor);
+    setTarget(targetAt(ui.cursor));
+    stage.classList.add("is-carrying");
+    positionAll();
+    if (ui.target) return attack(ui.target);
+    setStatus("Bring the hand over one of the computer's hands and click to strike, or press <kbd>&uarr;</kbd> to aim with the keyboard.");
+  });
+
+  stage.addEventListener("pointerleave", () => {
+    if (ui.phase === "act") dropCursor();
+  });
+
+  /* --- keyboard: reach across the table ------------------------------ */
+
+  /** Reach the selected hand most of the way toward what it is aiming at. */
+  function poseTowardTarget() {
+    const from = SLOTS[selectedKey()], to = SLOTS[ui.aim];
+    const d = drift[selectedKey()];
+    d.ox = (to.x - from.x) * 0.72;
+    d.oy = (to.y - from.y) * 0.72 - 24;
+    setTarget(ui.aim);
+    positionAll();
+  }
+
+  function startAiming() {
+    if (humanHands()[ui.focus] === 0) {
+      setStatus(`<b>${SLOTS[selectedKey()].tag}</b> is out, so it cannot attack. Slide fingers onto it with <kbd>&larr;</kbd> <kbd>&rarr;</kbd> instead.`);
+      return;
+    }
+    const targets = liveTargets();
+    if (targets.length === 0) return;
+    dropCursor();
+    ui.inputMode = "keys";
+    ui.preview = null;
+    ui.aim = targets.includes(ui.aim) ? ui.aim : targets[0];
+    poseTowardTarget();
+    announceTarget();
+  }
+
+  function stopAiming() {
+    ui.aim = null;
+    setTarget(null);
+    resetCarry();
+    positionAll();
+  }
+
+  function switchTarget(step) {
+    const targets = liveTargets();
+    if (targets.length > 1) {
+      const i = targets.indexOf(ui.aim);
+      ui.aim = targets[(i + (step > 0 ? 1 : targets.length - 1)) % targets.length];
+      poseTowardTarget();
+    }
+    announceTarget();
+  }
+
+  /** Spell out what the strike would do, before it happens. */
+  function announceTarget() {
+    const mine = humanHands()[ui.focus];
+    const theirs = countOf(ui.aim);
+    const after = Game.overflowSum(mine, theirs);
+    setStatus(
+      `Aiming at <b>${SLOTS[ui.aim].tag}</b> &mdash; ${theirs} + ${mine} = ` +
+      (after === 0 ? "<em>knocked out</em>" : `<b>${after}</b>`) +
+      `. <kbd>Enter</kbd> to strike, <kbd>&larr;</kbd> <kbd>&rarr;</kbd> to switch hands, <kbd>&darr;</kbd> to back off.`
+    );
+  }
 
   /* --------------------------------------------------- HUD + panel */
   function syncHud() {
@@ -1007,7 +1144,10 @@
     ui.state = Game.start();
     ui.focus = 0;
     ui.preview = null;
-    ui.hoverTarget = null;
+    ui.target = null;
+    ui.aim = null;
+    ui.cursor = null;
+    ui.inputMode = "keys";
     ui.spotlight = null;
     ui.lightPair = null;
     ui.analysis = null;
