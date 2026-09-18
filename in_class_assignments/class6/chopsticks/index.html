@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chopsticks Table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <header class="hud">
+    <div class="stat">
+      <span class="stat-k">You are</span>
+      <span class="stat-v is-you" id="hud-role">Player A</span>
+    </div>
+    <div class="stat">
+      <span class="stat-k">Turn</span>
+      <span class="stat-v" id="hud-turn">You</span>
+    </div>
+    <div class="stat">
+      <span class="stat-k">Level</span>
+      <span class="stat-v" id="hud-level">0 / 26</span>
+    </div>
+    <div class="stat">
+      <span class="stat-k">Moves left</span>
+      <span class="stat-v" id="hud-moves">26</span>
+    </div>
+    <div class="stat">
+      <span class="stat-k">Opponent</span>
+      <span class="stat-v is-cpu" id="hud-diff">Normal</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="hud-actions">
+      <button type="button" class="btn" id="btn-analysis" aria-pressed="false">AI analysis</button>
+      <button type="button" class="btn btn-primary" id="btn-new">New game</button>
+    </div>
+  </header>
+
+  <div class="stage" id="stage">
+    <svg id="scene" viewBox="0 0 1000 720" preserveAspectRatio="xMidYMid meet"
+         aria-label="Chopsticks table seen from the player's side"></svg>
+
+    <aside class="analysis" id="analysis" hidden>
+      <h2>AI analysis</h2>
+      <p class="sub">Minimax, read from Player A's side</p>
+      <div id="analysis-body">
+        <p class="analysis-empty">Nothing to show yet. The panel fills in on the computer's turn with every move it weighed and what each one is worth.</p>
+      </div>
+    </aside>
+
+    <div class="overlay" id="overlay-setup">
+      <div class="sheet">
+        <h1>Chopsticks Table</h1>
+        <p class="lede">
+          Both hands start at one finger. Tap a hand against your opponent's to add your
+          count onto theirs; a hand reaching five is knocked out. Or clap your own hands
+          together to redistribute what you have. Lose both hands and you are out.
+        </p>
+        <hr class="rule">
+
+        <p class="choice-k">Pick your side</p>
+        <div class="choices" id="choose-role">
+          <button type="button" class="choice" data-role="A" aria-pressed="true">
+            <span class="choice-name">Player A</span>
+            <span class="choice-note">Moves first, on even levels.</span>
+          </button>
+          <button type="button" class="choice" data-role="B" aria-pressed="false">
+            <span class="choice-name">Player B</span>
+            <span class="choice-note">Moves second, on odd levels.</span>
+          </button>
+        </div>
+
+        <p class="choice-k">Opponent strength</p>
+        <div class="choices" id="choose-diff">
+          <button type="button" class="choice" data-diff="easy" aria-pressed="false">
+            <span class="choice-name">Easy</span>
+            <span class="choice-note">Moves at random.</span>
+          </button>
+          <button type="button" class="choice" data-diff="normal" aria-pressed="true">
+            <span class="choice-name">Normal</span>
+            <span class="choice-note">Mostly optimal, rarely blunders.</span>
+          </button>
+          <button type="button" class="choice" data-diff="perfect" aria-pressed="false">
+            <span class="choice-name">Perfect</span>
+            <span class="choice-note">Always follows the table.</span>
+          </button>
+        </div>
+
+        <div class="sheet-actions">
+          <button type="button" class="btn btn-primary btn-lg" id="btn-start">Start game</button>
+          <span class="status" id="setup-note">Player A is theoretically lost at this depth &mdash; pick B for the easier side.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay-over" hidden>
+      <div class="sheet">
+        <p class="verdict" id="over-verdict">&mdash;</p>
+        <p class="lede" id="over-detail"></p>
+        <div class="sheet-actions">
+          <button type="button" class="btn btn-primary btn-lg" id="btn-again">Play again</button>
+          <button type="button" class="btn btn-lg" id="btn-switch">Change sides</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="controls">
+    <p class="status" id="status">Choose a side to begin.</p>
+  </footer>
+
+</div>
+
+<script src="game.js"></script>
+<script src="ai.js"></script>
+<script>
+/* =====================================================================
+   Presentation and interaction only. Every rule lives in game.js and
+   every value in ai.js; this layer draws positions and collects input.
+   ===================================================================== */
+(() => {
+  "use strict";
+
+  const MOVES = 13;            // per player, so the horizon sits at 26 plies
+  const DEPTH = MOVES * 2;
+
+  /* ------------------------------------------------------- Scene layout */
+  const H = 720;
+  const HORIZON_Y = 112;
+  const HEAD_Y = 74;
+
+  /*
+   * "n" slots are the player's own hands in the foreground, "f" the
+   * computer's across the table. `px` is how many scene units one sprite
+   * pixel occupies: a whole number at both depths, so the near hand is
+   * exactly twice the far hand and the pixel grid never breaks.
+   */
+  const SLOTS = {
+    fL: { x: 360, y: 300, px: 2, flip: false, tag: "CPU L" },
+    fR: { x: 640, y: 300, px: 2, flip: true,  tag: "CPU R" },
+    nL: { x: 318, y: 610, px: 4, flip: false, tag: "YOU L" },
+    nR: { x: 682, y: 610, px: 4, flip: true,  tag: "YOU R" },
+  };
+  const ORDER = ["fL", "fR", "nL", "nR"];
+  const isNearSlot = (key) => key[0] === "n";
+
+  const ARM_ROOT = {
+    fL: { x: 486, y: 92 }, fR: { x: 514, y: 92 },
+    nL: { x: 236, y: H + 30 }, nR: { x: 764, y: H + 30 },
+  };
+
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* =====================================================================
+     Pixel-art hands.
+
+     Each pose is rasterised once at 32x40 from a handful of capsules, then
+     cached as a data URI and blown up by a whole number. Shading is a
+     cylinder model: the signed distance field gives both the silhouette
+     and, through its gradient, a surface normal to light - which is what
+     makes the fingers read as rounded rather than as flat blobs.
+     ===================================================================== */
+  const SPRITE_W = 32, SPRITE_H = 40;
+  const WRIST = { x: 15, y: 38 };         // anchor inside the sprite
+  const LIGHT = { x: -0.50, y: -0.62, z: 0.60 };
+
+  /* Ramps run light to dark, with the last entry reserved for the outline. */
+  const PALETTES = {
+    lit:  ["#FFFFFF", "#EFECF4", "#D2CDDE", "#A9A3BA", "#7B7490", "#2E2938"],
+    dim:  ["#6B6576", "#5B5665", "#4B4655", "#3D3945", "#312D38", "#17141D"],
+    dead: ["#4A4038", "#40382F", "#362F28", "#2C2621", "#231E1A", "#131010"],
+  };
+
+  const FINGERS = [
+    { ax: 8.0,  ay: 23.0, bx: 4.6,  by: 14.5, r: 2.3, shade: 2.5 },   // pinky
+    { ax: 12.5, ay: 22.0, bx: 10.4, by: 9.5,  r: 2.5, shade: 2.7 },   // ring
+    { ax: 17.0, ay: 22.0, bx: 16.6, by: 6.5,  r: 2.6, shade: 2.8 },   // middle
+    { ax: 21.5, ay: 22.5, bx: 23.0, by: 9.0,  r: 2.5, shade: 2.7 },   // index
+  ];
+  const RAISE_ORDER = [3, 2, 1, 0];       // index first, the way you count
+
+  function sdCapsule(px, py, s) {
+    const vx = s.bx - s.ax, vy = s.by - s.ay;
+    const wx = px - s.ax, wy = py - s.ay;
+    const t = Math.max(0, Math.min(1, (wx * vx + wy * vy) / (vx * vx + vy * vy)));
+    return Math.hypot(wx - vx * t, wy - vy * t) - s.r;
+  }
+
+  function sdRoundRect(px, py, s) {
+    const qx = Math.abs(px - s.cx) - (s.hw - s.r);
+    const qy = Math.abs(py - s.cy) - (s.hh - s.r);
+    return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - s.r;
+  }
+
+  /** The capsules and boxes that make up a hand showing `count` fingers. */
+  function handShapes(count) {
+    const shapes = [
+      { kind: "rect", cx: 15, cy: 29,   hw: 10,  hh: 7.5, r: 4.5, shade: 9 },   // palm
+      { kind: "rect", cx: 15, cy: 37.5, hw: 6.5, hh: 3.5, r: 2.5, shade: 6 },   // wrist
+      { kind: "cap",  ax: 24, ay: 31, bx: 28.2, by: 25.5, r: 2.7, shade: 2.9 }, // thumb
+    ];
+
+    for (let slot = 0; slot < 4; slot++) {
+      const f = FINGERS[slot];
+      if (RAISE_ORDER.indexOf(slot) < count) {
+        shapes.push({ kind: "cap", ...f });
+      } else {
+        // Curled: a knuckle bump just proud of the fist.
+        shapes.push({
+          kind: "cap",
+          ax: f.ax, ay: f.ay,
+          bx: f.ax + (f.bx - f.ax) * 0.12, by: f.ay - 1.6,
+          r: f.r, shade: f.shade,
+        });
+      }
+    }
+    return shapes;
+  }
+
+  /** Nearest surface at this point, and the radius that surface curves over. */
+  function sample(shapes, x, y) {
+    let d = Infinity, shade = 3;
+    for (const s of shapes) {
+      const v = s.kind === "rect" ? sdRoundRect(x, y, s) : sdCapsule(x, y, s);
+      if (v < d) { d = v; shade = s.shade; }
+    }
+    return { d, shade };
+  }
+
+  /** Palette index for one pixel, or -1 outside the hand. */
+  function shadeAt(shapes, x, y) {
+    const { d, shade } = sample(shapes, x, y);
+    if (d > 0) return -1;
+    if (d > -0.65) return 5;                       // outline
+
+    const e = 0.35;
+    const gx = sample(shapes, x + e, y).d - sample(shapes, x - e, y).d;
+    const gy = sample(shapes, x, y + e).d - sample(shapes, x, y - e).d;
+    const len = Math.hypot(gx, gy) || 1;
+
+    // 0 on the axis, 1 at the rim: the in-plane part of the surface normal.
+    const u = Math.min(1, Math.max(0, 1 + d / shade));
+    const nz = Math.sqrt(Math.max(0, 1 - u * u));
+    const nx = (gx / len) * u, ny = (gy / len) * u;
+
+    const lum = Math.max(0, Math.min(1,
+      (nx * LIGHT.x + ny * LIGHT.y + nz * LIGHT.z) * 0.95 + 0.12));
+    return Math.min(4, Math.max(0, 4 - Math.round(lum * 4.4)));
+  }
+
+  function hexToRgb(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+
+  function renderSprite(count, paletteName) {
+    const pal = PALETTES[paletteName].map(hexToRgb);
+    const canvas = document.createElement("canvas");
+    canvas.width = SPRITE_W;
+    canvas.height = SPRITE_H;
+    const ctx = canvas.getContext("2d");
+    const img = ctx.createImageData(SPRITE_W, SPRITE_H);
+    const shapes = handShapes(count);
+
+    for (let y = 0; y < SPRITE_H; y++) {
+      for (let x = 0; x < SPRITE_W; x++) {
+        const band = shadeAt(shapes, x + 0.5, y + 0.5);
+        const o = (y * SPRITE_W + x) * 4;
+        if (band < 0) { img.data[o + 3] = 0; continue; }
+        const [r, g, b] = pal[band];
+        img.data[o] = r; img.data[o + 1] = g; img.data[o + 2] = b; img.data[o + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    return canvas.toDataURL();
+  }
+
+  const SPRITES = {};
+  function buildSprites() {
+    for (const name of Object.keys(PALETTES)) {
+      SPRITES[name] = [];
+      for (let n = 0; n <= 4; n++) SPRITES[name].push(renderSprite(n, name));
+    }
+  }
+
+  /* ---------------------------------------------------------- UI state */
+  const ui = {
+    humanRole: "A",
+    difficulty: "normal",
+    depth: DEPTH,
+    state: null,
+    table: null,
+    phase: "setup",     // setup | choose | act | animating | ai | over
+    focus: 0,
+    splits: [],
+    splitIndex: 0,
+    preview: null,
+    dragging: false,
+    hoverTarget: null,
+    spotlight: null,    // slot key under the torch
+    lightPair: null,    // two slots lit together, during a split
+    analysis: null,
+    showAnalysis: false,
+  };
+
+  const scene = document.getElementById("scene");
+  const stage = document.getElementById("stage");
+  const statusEl = document.getElementById("status");
+
+  const drift = {};
+  ORDER.forEach((k, i) => {
+    drift[k] = { dx: 0, dy: 0, rot: 0, ox: 0, oy: 0, arot: 0, extra: 0, phase: i * 1.7 };
+  });
+
+  /* ------------------------------------------ State <-> scene mapping */
+  const cpuRole = () => Game.opponentOf(ui.humanRole);
+  const ownerOf = (key) => (isNearSlot(key) ? ui.humanRole : cpuRole());
+  const indexOf = (key) => (key[1] === "L" ? 0 : 1);
+
+  const slotFor = (actor, idx) =>
+    (actor === ui.humanRole ? "n" : "f") + (idx === 0 ? "L" : "R");
+
+  function countOf(key) {
+    if (!ui.state) return 1;
+    if (ui.preview && isNearSlot(key)) return ui.preview[indexOf(key)];
+    const hands = ownerOf(key) === "A" ? ui.state.a : ui.state.b;
+    return hands[indexOf(key)];
+  }
+
+  const humanHands = () => (ui.humanRole === "A" ? ui.state.a : ui.state.b);
+
+  /** Whether this hand is inside the torch pool, and so drawn in full colour. */
+  function isLit(key) {
+    if (ui.lightPair) return ui.lightPair.includes(key);
+    if (ui.spotlight) return key === ui.spotlight;
+    return true;
+  }
+
+  function paletteFor(key) {
+    if (countOf(key) === 0) return "dead";
+    return isLit(key) ? "lit" : "dim";
+  }
+
+  /* ----------------------------------------------------------- Render */
+  function render() {
+    const layers = [];
+
+    layers.push(`<defs>
+      <radialGradient id="dimgrad" gradientUnits="userSpaceOnUse" cx="500" cy="420" r="900">
+        <stop offset="0"    stop-color="#12100C" stop-opacity="0"/>
+        <stop offset="0.32" stop-color="#12100C" stop-opacity="0.18"/>
+        <stop offset="0.66" stop-color="#12100C" stop-opacity="0.66"/>
+        <stop offset="1"    stop-color="#0B0907" stop-opacity="0.9"/>
+      </radialGradient>
+      <radialGradient id="torchgrad" gradientUnits="userSpaceOnUse" cx="500" cy="420" r="360">
+        <stop offset="0"   stop-color="#FFE3AC" stop-opacity="0.34"/>
+        <stop offset="0.5" stop-color="#FFC978" stop-opacity="0.13"/>
+        <stop offset="1"   stop-color="#FFB347" stop-opacity="0"/>
+      </radialGradient>
+    </defs>`);
+
+    // --- backdrop, all of it beneath the dimmer -------------------------
+    layers.push(`<path class="horizon" d="M 46 ${HORIZON_Y + 6}
+      Q 260 ${HORIZON_Y - 10} 500 ${HORIZON_Y - 2}
+      Q 740 ${HORIZON_Y + 8} 958 ${HORIZON_Y - 4}"/>`);
+    layers.push(`<g id="arms"></g>`);
+    layers.push(`<path class="head" d="M 484 ${HEAD_Y - 18} Q 500 ${HEAD_Y - 30} 516 ${HEAD_Y - 18}
+      L 518 ${HEAD_Y + 16} Q 500 ${HEAD_Y + 25} 482 ${HEAD_Y + 16} Z"/>`);
+
+    // --- the hands themselves -------------------------------------------
+    for (const key of ORDER) {
+      const slot = SLOTS[key];
+      const w = SPRITE_W * slot.px, h = SPRITE_H * slot.px;
+      const ix = -WRIST.x * slot.px, iy = -WRIST.y * slot.px;
+      const sprite = `<image class="hand-sprite" data-sprite="${key}"
+        href="${SPRITES[paletteFor(key)][countOf(key)]}"
+        x="${ix}" y="${iy}" width="${w}" height="${h}"/>`;
+
+      layers.push(`<g data-hand="${key}">
+        <g data-inner="${key}">
+          <g transform="${slot.flip ? "scale(-1,1)" : ""}">${sprite}</g>
+          <g data-reticle="${key}"></g>
+        </g>
+      </g>`);
+    }
+
+    // --- the room goes dark except where the torch falls -----------------
+    layers.push(`<rect id="dimmer" x="0" y="0" width="1000" height="720" fill="url(#dimgrad)"/>`);
+    layers.push(`<circle id="torch" cx="500" cy="420" r="360" fill="url(#torchgrad)"/>`);
+
+    // --- readable over any amount of dimming ----------------------------
+    for (const key of ORDER) {
+      const n = countOf(key);
+      const cls = ["hand"];
+      if (n === 0) cls.push("is-dead");
+      if (isNearSlot(key) && ui.focus === indexOf(key) && (ui.phase === "choose" || ui.phase === "act")) cls.push("is-focus");
+      if (!isNearSlot(key) && ui.hoverTarget === key) cls.push("is-target");
+      layers.push(`<g class="${cls.join(" ")}">${badge(key, n)}</g>`);
+    }
+
+    if (ui.phase === "ai") {
+      layers.push(`<text class="thinking-note" id="note" x="500" y="185">thinking</text>`);
+    }
+
+    layers.push(`<g id="fx"></g>`);
+
+    scene.innerHTML = layers.join("");
+    for (const key of ORDER) spriteSig[key] = null;
+    syncSprites();
+    syncReticles();
+    positionAll();
+    syncHud();
+  }
+
+  function badge(key, n) {
+    const slot = SLOTS[key];
+    const out = slot.flip ? 1 : -1;
+    const near = isNearSlot(key);
+    const bx = slot.x + out * (near ? 148 : 84);
+    const by = slot.y - (near ? 116 : 64);
+    const r = near ? 25 : 18;
+    const fs = near ? 27 : 19;
+    return `<g data-badge="${key}">
+      <path class="badge-lead" d="M ${slot.x + out * (near ? 62 : 32)} ${slot.y - (near ? 62 : 34)} L ${bx - out * r} ${by + 4}"/>
+      <circle class="badge-ring" cx="${bx}" cy="${by}" r="${r}"/>
+      <text class="badge-num" x="${bx}" y="${by + 1}" style="font-size:${fs}px">${n}</text>
+      <text class="badge-tag" x="${bx}" y="${by + r + 17}">${slot.tag}</text>
+    </g>`;
+  }
+
+  /** Corner brackets, sized in whole sprite pixels. */
+  function reticleMarkup(px, extraClass) {
+    const cy = -15 * px, hw = 17 * px, hh = 18 * px, len = 5 * px;
+    const corner = (sx, sy) =>
+      `M ${sx * hw} ${cy + sy * hh - sy * len} L ${sx * hw} ${cy + sy * hh} L ${sx * hw - sx * len} ${cy + sy * hh}`;
+    return `<path class="reticle ${extraClass}" stroke-width="${px}"
+      d="${corner(-1, -1)} ${corner(1, -1)} ${corner(-1, 1)} ${corner(1, 1)}"/>`;
+  }
+
+  const spriteSig = {};
+
+  /** Swap a hand's sprite only when its pose or lighting actually changed. */
+  function syncSprites() {
+    for (const key of ORDER) {
+      const n = countOf(key);
+      const pal = paletteFor(key);
+      const sig = pal + n;
+      if (spriteSig[key] === sig) continue;
+      spriteSig[key] = sig;
+      const img = scene.querySelector(`[data-sprite="${key}"]`);
+      if (img) img.setAttribute("href", SPRITES[pal][n]);
+    }
+  }
+
+  function syncReticles() {
+    for (const key of ORDER) {
+      const g = scene.querySelector(`[data-reticle="${key}"]`);
+      if (!g) continue;
+      const px = SLOTS[key].px;
+      if (isNearSlot(key) && ui.focus === indexOf(key) && (ui.phase === "choose" || ui.phase === "act")) {
+        g.innerHTML = reticleMarkup(px, "");
+      } else if (!isNearSlot(key) && ui.hoverTarget === key) {
+        g.innerHTML = reticleMarkup(px, "is-target");
+      } else {
+        g.innerHTML = "";
+      }
+    }
+  }
+
+  function refreshHand(key) {
+    const n = countOf(key);
+    const num = scene.querySelector(`[data-badge="${key}"] .badge-num`);
+    if (num) num.textContent = n;
+    syncSprites();
+  }
+
+  /* ------------------------------------------------ Placement and light */
+  function handTransform(key) {
+    const s = SLOTS[key], d = drift[key];
+    return `translate(${s.x + d.dx + d.ox} ${s.y + d.dy + d.oy})
+            rotate(${d.rot + d.arot}) scale(${1 + d.extra})`;
+  }
+
+  function livePos(key) {
+    const s = SLOTS[key], d = drift[key];
+    return { x: s.x + d.dx + d.ox, y: s.y + d.dy + d.oy };
+  }
+
+  function wrist(key) {
+    const p = livePos(key);
+    return { x: p.x, y: p.y + 2 * SLOTS[key].px };
+  }
+
+  /** Where the torch points, and how wide its pool is. */
+  function lightTarget() {
+    if (ui.lightPair) {
+      const [k1, k2] = ui.lightPair;
+      const p1 = livePos(k1), p2 = livePos(k2), px = SLOTS[k1].px;
+      return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 - 15 * px, r: 62 * px };
+    }
+    if (ui.spotlight && SLOTS[ui.spotlight]) {
+      const s = SLOTS[ui.spotlight], p = livePos(ui.spotlight);
+      return { x: p.x, y: p.y - 15 * s.px, r: 40 * s.px };
+    }
+    if (ui.phase === "ai") {
+      return { x: 500, y: SLOTS.fL.y - 30, r: 300 };
+    }
+    return { x: 500, y: 420, r: 620 };
+  }
+
+  function updateLight() {
+    const t = lightTarget();
+    const dim = scene.querySelector("#dimgrad");
+    const grad = scene.querySelector("#torchgrad");
+    const circle = scene.querySelector("#torch");
+    if (!dim || !grad || !circle) return;
+
+    dim.setAttribute("cx", t.x); dim.setAttribute("cy", t.y);
+    dim.setAttribute("r", t.r * 2.6);
+    grad.setAttribute("cx", t.x); grad.setAttribute("cy", t.y);
+    grad.setAttribute("r", t.r);
+    circle.setAttribute("cx", t.x); circle.setAttribute("cy", t.y);
+    circle.setAttribute("r", t.r);
+  }
+
+  function positionAll() {
+    for (const key of ORDER) {
+      const g = scene.querySelector(`[data-inner="${key}"]`);
+      if (g) g.setAttribute("transform", handTransform(key));
+    }
+    const arms = scene.querySelector("#arms");
+    if (arms) {
+      arms.innerHTML = ORDER.map((key) => {
+        const root = ARM_ROOT[key], w = wrist(key);
+        const far = !isNearSlot(key);
+        const midX = (root.x + w.x) / 2 + (far ? 0 : (w.x - root.x) * 0.12);
+        const midY = (root.y + w.y) / 2;
+        return `<path class="arm ${far ? "is-far" : ""}" d="M ${root.x} ${root.y} Q ${midX} ${midY} ${w.x} ${w.y}"/>`;
+      }).join("");
+    }
+    updateLight();
+  }
+
+  let lastTick = 0;
+  let dots = 0;
+
+  function loop(t) {
+    if (!reduceMotion) {
+      const time = t / 1000;
+      for (const key of ORDER) {
+        const d = drift[key], near = isNearSlot(key);
+        const amp = near ? 13 : 7;
+        d.dy = Math.sin(time * 0.72 + d.phase) * amp;
+        d.dx = Math.cos(time * 0.51 + d.phase * 1.4) * (amp * 0.35);
+        d.rot = Math.sin(time * 0.43 + d.phase) * (near ? 1.5 : 1.0);
+      }
+      positionAll();
+
+      if (t - lastTick > 320) {
+        lastTick = t;
+        const note = scene.querySelector("#note");
+        if (note) {
+          dots = (dots + 1) % 4;
+          note.textContent = "thinking" + ".".repeat(dots);
+        }
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+
+  /* ------------------------------------------------------- Animations */
+  const easeInOut = (p) => (p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2);
+  const easeOut = (p) => 1 - Math.pow(1 - p, 3);
+  const easeIn = (p) => p * p;
+
+  function tween(ms, step) {
+    return new Promise((done) => {
+      if (reduceMotion) { step(1); return done(); }
+      const t0 = performance.now();
+      (function frame(now) {
+        const p = Math.min(1, (now - t0) / ms);
+        step(p);
+        p < 1 ? requestAnimationFrame(frame) : done();
+      })(performance.now());
+    });
+  }
+
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  function commit(move) {
+    ui.state = move.state;
+    ui.preview = null;
+    for (const key of ORDER) refreshHand(key);
+  }
+
+  function impactAt(x, y, px) {
+    const fx = scene.querySelector("#fx");
+    if (!fx || reduceMotion) return;
+    const marks = [];
+    for (let i = 0; i < 7; i++) {
+      const ang = (i / 7) * Math.PI * 2 + 0.3;
+      const r1 = 12 * px, r2 = r1 + 9 * px;
+      marks.push(`<path class="spark" d="M ${x + Math.cos(ang) * r1} ${y + Math.sin(ang) * r1}
+        L ${x + Math.cos(ang) * r2} ${y + Math.sin(ang) * r2}"/>`);
+    }
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.innerHTML = marks.join("");
+    fx.appendChild(g);
+    tween(360, (p) => {
+      g.setAttribute("opacity", String(1 - p));
+      g.setAttribute("transform", `translate(${x} ${y}) scale(${1 + p * 0.5}) translate(${-x} ${-y})`);
+    }).then(() => g.remove());
+  }
+
+  /** Attack: the hand arcs across, lands, and returns. The torch goes with it. */
+  async function animateAttack(move) {
+    const fromKey = slotFor(move.actor, move.from);
+    const toKey = slotFor(Game.opponentOf(move.actor), move.to);
+    const a = SLOTS[fromKey], b = SLOTS[toKey];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const shrink = b.px / a.px - 1;
+
+    ui.spotlight = fromKey;
+    ui.hoverTarget = toKey;
+    syncSprites();
+    syncReticles();
+
+    await tween(520, (p) => {
+      const e = easeInOut(p);
+      drift[fromKey].ox = dx * e;
+      drift[fromKey].oy = dy * e + Math.sin(p * Math.PI) * -90;
+      drift[fromKey].extra = shrink * e + Math.sin(p * Math.PI) * 0.12;
+      drift[fromKey].arot = Math.sin(p * Math.PI) * 14;
+      positionAll();
+    });
+
+    commit(move);
+    const hit = livePos(toKey);
+    impactAt(hit.x, hit.y - 15 * b.px, b.px);
+
+    // The light lands with the blow.
+    ui.spotlight = toKey;
+    syncSprites();
+
+    await tween(150, (p) => {
+      drift[toKey].ox = Math.sin(p * Math.PI * 3) * 9 * (1 - p);
+      positionAll();
+    });
+
+    await tween(400, (p) => {
+      const e = easeOut(p);
+      drift[fromKey].ox = dx * (1 - e);
+      drift[fromKey].oy = dy * (1 - e);
+      drift[fromKey].extra = shrink * (1 - e);
+      drift[fromKey].arot = 0;
+      positionAll();
+    });
+
+    drift[fromKey].ox = drift[fromKey].oy = drift[fromKey].extra = drift[fromKey].arot = 0;
+    drift[toKey].ox = 0;
+    ui.hoverTarget = null;
+    syncReticles();
+  }
+
+  /** Split: the mover's own hands clap together and the fingers resettle. */
+  async function animateSplit(move) {
+    const k1 = slotFor(move.actor, 0);
+    const k2 = slotFor(move.actor, 1);
+    const s1 = SLOTS[k1], s2 = SLOTS[k2];
+    const mid = (s1.x + s2.x) / 2;
+    const gap = 17 * s1.px;
+    const d1 = mid - gap - s1.x;
+    const d2 = mid + gap - s2.x;
+
+    ui.lightPair = [k1, k2];
+    syncSprites();
+
+    await tween(260, (p) => {
+      const e = easeIn(p);
+      drift[k1].ox = d1 * e; drift[k2].ox = d2 * e;
+      drift[k1].arot = 7 * e; drift[k2].arot = -7 * e;
+      positionAll();
+    });
+
+    commit(move);
+    impactAt(mid, (s1.y + s2.y) / 2 - 15 * s1.px, s1.px);
+
+    // A short rebound while the new finger counts read.
+    await tween(220, (p) => {
+      const k = Math.sin(p * Math.PI) * 10;
+      drift[k1].ox = d1 - k; drift[k2].ox = d2 + k;
+      positionAll();
+    });
+
+    await tween(360, (p) => {
+      const e = easeOut(p);
+      drift[k1].ox = d1 * (1 - e); drift[k2].ox = d2 * (1 - e);
+      drift[k1].arot = 7 * (1 - e); drift[k2].arot = -7 * (1 - e);
+      positionAll();
+    });
+
+    drift[k1].ox = drift[k2].ox = drift[k1].arot = drift[k2].arot = 0;
+    ui.lightPair = null;
+  }
+
+  /* ------------------------------------------------------- Turn flow */
+  async function playMove(move) {
+    ui.phase = "animating";
+    ui.preview = null;
+    render();
+
+    if (move.type === "attack") await animateAttack(move);
+    else await animateSplit(move);
+
+    render();
+
+    const result = Game.outcome(ui.state, ui.depth);
+    if (result.over) return endGame(result);
+    if (Game.turn(ui.state) === ui.humanRole) beginHumanTurn();
+    else beginAiTurn();
+  }
+
+  function beginHumanTurn() {
+    ui.phase = "choose";
+    ui.preview = null;
+    ui.hoverTarget = null;
+    ui.lightPair = null;
+    const hands = humanHands();
+    if (hands[ui.focus] === 0 && hands[1 - ui.focus] > 0) ui.focus = 1 - ui.focus;
+    ui.spotlight = slotFor(ui.humanRole, ui.focus);
+    render();
+    setStatus(`Your turn. <kbd>&larr;</kbd> <kbd>&rarr;</kbd> to light up a hand, <kbd>Enter</kbd> to pick it up.`);
+  }
+
+  async function beginAiTurn() {
+    ui.phase = "ai";
+    ui.spotlight = null;
+    ui.lightPair = null;
+    render();
+    setStatus(`<b>Player ${cpuRole()}</b> is thinking&hellip;`);
+
+    ui.analysis = AI.analyze(ui.table, ui.state);
+    renderAnalysis();
+
+    // A pause so the computer reads as deliberating rather than snapping.
+    await wait(700 + Math.random() * 700);
+
+    const move = AI.chooseMove(ui.table, ui.state, ui.difficulty);
+    if (!move) return endGame(Game.outcome(ui.state, ui.depth));
+
+    setStatus(`<b>Player ${cpuRole()}</b> plays <em>${Game.describe(move)}</em>.`);
+    await playMove(move);
+  }
+
+  function endGame(result) {
+    ui.phase = "over";
+    ui.preview = null;
+    ui.spotlight = null;
+    ui.lightPair = null;
+    render();
+
+    const overlay = document.getElementById("overlay-over");
+    const verdict = document.getElementById("over-verdict");
+    const detail = document.getElementById("over-detail");
+
+    if (result.winner === null) {
+      verdict.textContent = "Tie";
+      verdict.style.color = "var(--warn)";
+      detail.textContent = `Neither side was knocked out inside ${ui.depth} plies, so the game is drawn at the horizon.`;
+    } else if (result.winner === ui.humanRole) {
+      verdict.textContent = "You win";
+      verdict.style.color = "var(--good)";
+      detail.textContent = `Player ${cpuRole()} lost both hands on level ${ui.state.level}.`;
+    } else {
+      verdict.textContent = "You lose";
+      verdict.style.color = "var(--bad)";
+      detail.textContent = `You lost both hands on level ${ui.state.level}. Player ${result.winner} takes it.`;
+    }
+
+    overlay.hidden = false;
+    setStatus(`Game over on level <b>${ui.state.level}</b>.`);
+  }
+
+  /* --------------------------------------------------- Human input */
+  function setStatus(html) { statusEl.innerHTML = html; }
+
+  function enterActPhase() {
+    ui.phase = "act";
+    ui.splits = Game.splitOptions(ui.state);
+    ui.splitIndex = ui.splits.findIndex((o) => o.isCurrent);
+    ui.preview = null;
+    ui.spotlight = slotFor(ui.humanRole, ui.focus);
+    render();
+    setStatus(
+      `<b>${SLOTS[slotFor(ui.humanRole, ui.focus)].tag}</b> is up. ` +
+      `Drag it onto one of the computer's hands to attack, or use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> ` +
+      `to slide fingers between your own hands. <kbd>Esc</kbd> to back out.`
+    );
+  }
+
+  function scrubSplit(step) {
+    if (ui.splits.length <= 1) {
+      setStatus("No legal way to redistribute from here &mdash; drag onto a hand to attack instead.");
+      return;
+    }
+    ui.splitIndex = Math.max(0, Math.min(ui.splits.length - 1, ui.splitIndex + step));
+    const option = ui.splits[ui.splitIndex];
+    ui.preview = option.isCurrent ? null : option.counts.slice();
+    ui.lightPair = [slotFor(ui.humanRole, 0), slotFor(ui.humanRole, 1)];
+    render();
+
+    if (option.isCurrent) {
+      setStatus(`Back to <b>${option.counts[0]}&ndash;${option.counts[1]}</b>, where you started. Keep scrubbing to find a split.`);
+    } else {
+      setStatus(`Split preview <b>${option.counts[0]}&ndash;${option.counts[1]}</b>. <kbd>Enter</kbd> to clap your hands together and commit.`);
+    }
+  }
+
+  function commitSplit() {
+    const option = ui.splits[ui.splitIndex];
+    if (!option || option.isCurrent) {
+      setStatus("That is the arrangement you already have. Scrub to a different split, or drag onto a hand to attack.");
+      return;
+    }
+    playMove(option.move);
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (ui.phase === "choose") {
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault();
+        ui.focus = 1 - ui.focus;
+        ui.spotlight = slotFor(ui.humanRole, ui.focus);
+        render();
+        const n = humanHands()[ui.focus];
+        setStatus(n === 0
+          ? `<b>${SLOTS[ui.spotlight].tag}</b> is out, so it cannot attack &mdash; but you can still redistribute onto it.`
+          : `<b>${SLOTS[ui.spotlight].tag}</b> lit, ${n} finger${n === 1 ? "" : "s"}. <kbd>Enter</kbd> to pick it up.`);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        enterActPhase();
+      }
+      return;
+    }
+
+    if (ui.phase === "act") {
+      if (e.key === "ArrowLeft") { e.preventDefault(); scrubSplit(-1); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); scrubSplit(1); }
+      else if (e.key === "Enter") { e.preventDefault(); commitSplit(); }
+      else if (e.key === "Escape") { e.preventDefault(); beginHumanTurn(); }
+    }
+  });
+
+  /* ------------------------------------------------ Drag to attack */
+  function toScene(evt) {
+    const ctm = scene.getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+    return new DOMPoint(evt.clientX, evt.clientY).matrixTransform(ctm.inverse());
+  }
+
+  function targetAt(p) {
+    if (humanHands()[ui.focus] === 0) return null;
+    let best = null, bestD = 120;
+    for (const key of ["fL", "fR"]) {
+      if (countOf(key) === 0) continue;
+      const c = livePos(key);
+      const d = Math.hypot(p.x - c.x, p.y - (c.y - 30));
+      if (d < bestD) { bestD = d; best = key; }
+    }
+    return best;
+  }
+
+  function drawAim(p) {
+    const fx = scene.querySelector("#fx");
+    if (!fx) return;
+    const from = livePos(slotFor(ui.humanRole, ui.focus));
+    fx.innerHTML = `<path class="aim-line" d="M ${from.x} ${from.y - 60} Q ${(from.x + p.x) / 2} ${(from.y + p.y) / 2 - 80} ${p.x} ${p.y}"/>`;
+  }
+
+  stage.addEventListener("pointerdown", (e) => {
+    if (ui.phase !== "act") return;
+    ui.dragging = true;
+    stage.classList.add("is-aiming");
+    stage.setPointerCapture?.(e.pointerId);
+    drawAim(toScene(e));
+  });
+
+  stage.addEventListener("pointermove", (e) => {
+    if (!ui.dragging) return;
+    const p = toScene(e);
+    drawAim(p);
+    const target = targetAt(p);
+    if (target !== ui.hoverTarget) {
+      ui.hoverTarget = target;
+      syncReticles();
+    }
+  });
+
+  stage.addEventListener("pointerup", (e) => {
+    if (!ui.dragging) return;
+    ui.dragging = false;
+    stage.classList.remove("is-aiming");
+    const p = toScene(e);
+    const target = targetAt(p);
+    const fx = scene.querySelector("#fx");
+    if (fx) fx.innerHTML = "";
+
+    ui.hoverTarget = null;
+    syncReticles();
+
+    if (!target) {
+      setStatus("Release on one of the computer's hands to attack it, or scrub with <kbd>&larr;</kbd> <kbd>&rarr;</kbd> to split.");
+      return;
+    }
+
+    const move = Game.findAttack(ui.state, ui.focus, indexOf(target));
+    if (!move) {
+      setStatus("That is not a legal attack &mdash; a hand that is out can neither hit nor be hit.");
+      return;
+    }
+    playMove(move);
+  });
+
+  /* --------------------------------------------------- HUD + panel */
+  function syncHud() {
+    if (!ui.state) return;
+    document.getElementById("hud-role").textContent = `Player ${ui.humanRole}`;
+    document.getElementById("hud-turn").textContent =
+      ui.phase === "over" ? "—" : (Game.turn(ui.state) === ui.humanRole ? "You" : `Player ${cpuRole()}`);
+    document.getElementById("hud-level").textContent = `${ui.state.level} / ${ui.depth}`;
+    document.getElementById("hud-moves").textContent = String(Math.max(0, ui.depth - ui.state.level));
+    document.getElementById("hud-diff").textContent = AI.DIFFICULTY[ui.difficulty].label;
+  }
+
+  function renderAnalysis() {
+    const body = document.getElementById("analysis-body");
+    const a = ui.analysis;
+    if (!a) return;
+
+    const rows = a.moves.map((m) => `
+      <tr class="${a.selected && Game.key(m.move.state) === Game.key(a.selected.state) ? "is-picked" : ""}">
+        <td class="mv-name">${m.label}</td>
+        <td>${m.result}</td>
+        <td class="mv-val">${m.value > 0 ? "+1" : m.value}</td>
+      </tr>`).join("");
+
+    body.innerHTML = `
+      <div class="field">
+        <div class="field-k">Current state</div>
+        <div class="field-v">${Game.describeState(a.state)} &middot; level ${a.state.level}</div>
+      </div>
+      <div class="field">
+        <div class="field-k">To move</div>
+        <div class="field-v">Player ${a.mover} &mdash; ${a.maximizing ? "maximizing" : "minimizing"}</div>
+      </div>
+      <div class="field">
+        <div class="field-k">Legal moves considered (${a.moves.length})</div>
+        <table class="moves">
+          <thead><tr><th>Move</th><th>Leads to</th><th class="mv-val">Value</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="field">
+        <div class="field-k">Selected move</div>
+        <div class="field-v">${a.selectedLabel}</div>
+      </div>
+      <div class="field">
+        <div class="field-k">Predicted outcome, from Player A</div>
+        <div class="field-v big verdict-${a.outcome}">${a.outcome}</div>
+      </div>`;
+  }
+
+  document.getElementById("btn-analysis").addEventListener("click", (e) => {
+    ui.showAnalysis = !ui.showAnalysis;
+    document.getElementById("analysis").hidden = !ui.showAnalysis;
+    e.currentTarget.setAttribute("aria-pressed", String(ui.showAnalysis));
+  });
+
+  /* ------------------------------------------------------- Setup flow */
+  function bindChoices(containerId, attr, onPick) {
+    const container = document.getElementById(containerId);
+    container.addEventListener("click", (e) => {
+      const btn = e.target.closest(".choice");
+      if (!btn) return;
+      container.querySelectorAll(".choice").forEach((c) => {
+        c.setAttribute("aria-pressed", String(c === btn));
+      });
+      onPick(btn.dataset[attr]);
+    });
+  }
+
+  bindChoices("choose-role", "role", (role) => { ui.humanRole = role; });
+  bindChoices("choose-diff", "diff", (diff) => {
+    ui.difficulty = diff;
+    document.getElementById("setup-note").textContent = AI.DIFFICULTY[diff].blurb;
+  });
+
+  function newGame() {
+    document.getElementById("overlay-setup").hidden = true;
+    document.getElementById("overlay-over").hidden = true;
+
+    ui.state = Game.start();
+    ui.focus = 0;
+    ui.preview = null;
+    ui.hoverTarget = null;
+    ui.spotlight = null;
+    ui.lightPair = null;
+    ui.analysis = null;
+    document.getElementById("analysis-body").innerHTML =
+      `<p class="analysis-empty">Nothing to show yet. The panel fills in on the computer's turn with every move it weighed and what each one is worth.</p>`;
+
+    if (!ui.table) ui.table = AI.buildTable(ui.depth);
+
+    render();
+    if (Game.turn(ui.state) === ui.humanRole) beginHumanTurn();
+    else beginAiTurn();
+  }
+
+  function backToSetup() {
+    document.getElementById("overlay-over").hidden = true;
+    document.getElementById("overlay-setup").hidden = false;
+    ui.phase = "setup";
+    ui.spotlight = null;
+    ui.lightPair = null;
+    setStatus("Choose a side to begin.");
+  }
+
+  document.getElementById("btn-start").addEventListener("click", newGame);
+  document.getElementById("btn-again").addEventListener("click", newGame);
+  document.getElementById("btn-new").addEventListener("click", backToSetup);
+  document.getElementById("btn-switch").addEventListener("click", backToSetup);
+
+  /* -------------------------------------------------------------- Boot */
+  buildSprites();
+  ui.state = Game.start();
+  render();
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

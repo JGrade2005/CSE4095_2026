@@ -1,0 +1,452 @@
+/* ====================================================================
+   Chopsticks Table - "Plate" treatment, lit by torchlight.
+
+   The chrome keeps the vintage anatomical plate look: aged paper, umber
+   ink, oxblood for anything live. The stage itself is a dark room - the
+   hands are pixel sprites, and only the hand in play is lit, so what you
+   are about to act with is never in doubt.
+   ==================================================================== */
+
+:root {
+  --ground:    #D8CDB6;
+  --paper:     #EFE6D2;
+  --paper-2:   #E7DBC2;
+  --ink:       #4A3620;
+  --ink-soft:  #6B5334;
+  --dead:      #B0A084;
+  --accent:    #8C2F1E;   /* oxblood - the player's side */
+  --accent-2:  #2E5140;   /* verdigris - the computer's side, impacts */
+  --rule:      #BCAC90;
+  --dim:       #8A7554;
+
+  /* The stage: a dark room with one light in it. */
+  --stage-bg:    #1B1510;
+  --silhouette:  #2C231A;
+  --backdrop:    #4A3B2A;
+  --torch:       #FFCB73;
+  --torch-soft:  #C49A55;
+
+  --good:      #2E5140;
+  --warn:      #9A6B1F;
+  --bad:       #8C2F1E;
+
+  --display: "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --r: 3px;
+  --shadow: 0 18px 40px -22px rgba(27, 21, 16, .7);
+}
+
+* { box-sizing: border-box; }
+
+/* `hidden` must beat the display values set below it. */
+[hidden] { display: none !important; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: var(--ground);
+}
+
+/* ------------------------------------------------------------------ HUD */
+
+.hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 26px;
+  padding-block: 12px;
+  padding-inline: 20px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+}
+
+.stat { display: flex; flex-direction: column; gap: 3px; }
+
+.stat-k {
+  font-size: 9.5px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.stat-v {
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-v.is-you { color: var(--accent); }
+.stat-v.is-cpu { color: var(--accent-2); }
+
+.spacer { flex: 1 1 auto; min-width: 0; }
+
+.hud-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* --------------------------------------------------------------- Buttons */
+
+.btn {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  padding: 9px 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+.btn-primary:hover { color: var(--paper); filter: brightness(1.1); }
+
+.btn-lg { font-size: 12px; padding: 13px 22px; }
+
+/* ----------------------------------------------------------------- Stage */
+
+.stage {
+  position: relative;
+  min-height: 0;
+  background: var(--stage-bg);
+  overflow: hidden;
+}
+
+.stage svg { display: block; width: 100%; height: 100%; touch-action: none; }
+
+.stage.is-aiming { cursor: crosshair; }
+
+/* Sprites are drawn at 32x40 and blown up by a whole number, so every
+   pixel stays square. Without this the browser smooths them into mush. */
+.hand-sprite {
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+/* Backdrop: the far edge of the table, the opponent, and the arms. These
+   sit under the dimmer, so they read as shapes in an unlit room. */
+.horizon { fill: none; stroke: var(--backdrop); stroke-width: 2; stroke-linecap: round; }
+.arm { fill: none; stroke: var(--silhouette); stroke-width: 9; stroke-linecap: round; }
+.arm.is-far { stroke-width: 5; }
+.head { fill: var(--silhouette); stroke: var(--backdrop); stroke-width: 1.5; }
+
+/* The selection reticle: chunky corner brackets, sized in whole sprite
+   pixels so it belongs to the same grid as the hands. */
+.reticle {
+  fill: none;
+  stroke: var(--torch);
+  stroke-linecap: square;
+  animation: reticle-pulse 1.5s ease-in-out infinite;
+}
+.reticle.is-target { stroke: #7FD4AE; }
+
+@keyframes reticle-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .45; }
+}
+
+/* Counts, hung off a leader line like a plate label. Kept above the
+   dimmer so the numbers stay readable however dark the room gets. */
+.badge-ring { fill: var(--paper); stroke: var(--ink); stroke-width: 1.2; }
+.hand.is-focus .badge-ring { stroke: var(--accent); stroke-width: 2.2; }
+.hand.is-target .badge-ring { stroke: var(--accent-2); stroke-width: 2.2; }
+.hand.is-dead .badge-ring { fill: var(--silhouette); stroke: var(--backdrop); }
+
+.badge-num {
+  font-family: var(--display);
+  font-weight: 600;
+  fill: var(--ink);
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.hand.is-dead .badge-num { fill: var(--dead); }
+.hand.is-focus .badge-num { fill: var(--accent); }
+
+.badge-lead { fill: none; stroke: var(--torch-soft); stroke-width: 1.2; opacity: .55; }
+
+.badge-tag {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  fill: var(--torch-soft);
+  text-anchor: middle;
+}
+
+.spark { fill: none; stroke: var(--torch); stroke-width: 3; stroke-linecap: round; }
+
+.aim-line {
+  fill: none;
+  stroke: var(--torch);
+  stroke-width: 3;
+  stroke-dasharray: 9 7;
+  opacity: .9;
+}
+
+.thinking-note {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  fill: var(--torch-soft);
+  text-anchor: middle;
+}
+
+/* ------------------------------------------------------------- Statusbar */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding-block: 12px;
+  padding-inline: 20px;
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+}
+
+.status {
+  flex: 1 1 260px;
+  min-width: 0;
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--dim);
+}
+.status b { color: var(--ink); font-weight: 500; }
+.status em { color: var(--accent); font-style: normal; }
+
+kbd {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  border: 1px solid var(--rule);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--ink);
+  background: var(--paper-2);
+  white-space: nowrap;
+}
+
+/* -------------------------------------------------------- Analysis panel */
+
+.analysis {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(380px, 92vw);
+  background: var(--paper);
+  border-left: 1px solid var(--rule);
+  box-shadow: var(--shadow);
+  overflow-y: auto;
+  padding-block: 18px;
+  padding-inline: 20px;
+  z-index: 5;
+}
+
+.analysis h2 {
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 2px;
+}
+
+.analysis .sub {
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin: 0 0 18px;
+}
+
+.field { margin-bottom: 15px; }
+
+.field-k {
+  font-size: 9.5px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 4px;
+}
+
+.field-v {
+  font-size: 13px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+
+.field-v.big {
+  font-family: var(--display);
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.verdict-WIN  { color: var(--good); }
+.verdict-TIE  { color: var(--warn); }
+.verdict-LOSS { color: var(--bad); }
+
+.moves {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.moves th {
+  text-align: left;
+  font-weight: 400;
+  font-size: 9.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--dim);
+  padding: 0 8px 6px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.moves td {
+  padding: 6px 8px 6px 0;
+  border-bottom: 1px solid var(--paper-2);
+  vertical-align: top;
+}
+
+.moves tr.is-picked td { color: var(--accent); }
+.moves tr.is-picked .mv-name::before { content: "\25B8 "; }
+.moves .mv-name { padding-left: 0; }
+.moves .mv-val { text-align: right; width: 3.5em; }
+
+.analysis-empty { font-size: 12.5px; color: var(--dim); line-height: 1.5; }
+
+/* -------------------------------------------------------------- Overlays */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(27, 21, 16, .78);
+  backdrop-filter: blur(2px);
+}
+
+.sheet {
+  width: min(520px, 100%);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  padding-block: 28px;
+  padding-inline: 28px;
+}
+
+.sheet h1 {
+  font-family: var(--display);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.08;
+  margin: 0 0 6px;
+  text-wrap: balance;
+}
+
+.sheet .lede {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--dim);
+  margin: 0 0 22px;
+  max-width: 62ch;
+}
+
+.rule {
+  height: 1px;
+  background: var(--rule);
+  border: 0;
+  margin: 0 0 22px;
+}
+
+.choice-k {
+  font-size: 9.5px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 8px;
+}
+
+.choices { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+
+.choice {
+  flex: 1 1 150px;
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  line-height: 1.4;
+}
+.choice:hover { border-color: var(--accent); }
+.choice:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.choice[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--paper); }
+.choice[aria-pressed="true"] .choice-note { color: var(--paper); opacity: .85; }
+
+.choice-name {
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.choice-note { display: block; font-size: 11px; color: var(--dim); }
+
+.sheet-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+.verdict {
+  font-family: var(--display);
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.05;
+  margin: 0 0 8px;
+}
+
+/* ----------------------------------------------------------- Responsive */
+
+@media (max-width: 680px) {
+  .hud, .controls { gap: 8px 16px; padding-inline: 16px; }
+  .stat-v { font-size: 15px; }
+  .status { flex-basis: 100%; }
+  .sheet { padding-inline: 20px; padding-block: 22px; }
+  .sheet h1 { font-size: 24px; }
+  .analysis { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+  .reticle { animation: none; opacity: 1; }
+}
