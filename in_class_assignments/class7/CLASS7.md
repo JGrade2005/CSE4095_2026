@@ -34,5 +34,22 @@ THREE INTERESTING OBSERVATIONS:
 
 3. The minimum hours slept being 4.30 is interesting, and I think that this student getting a higher quiz score than exam score is interesting, and likely due to lack of sleep before the exam compared to the quiz. 
 
+What do you observe from the group comparison?
+
+From the group comparison, I notice that students that study within a study group don't perform noticeably better than those that do not. Those that do study there is only a .56 different in exam scores. This difference is too small to attribute it directly to study groups. Even if the difference was larger, it could be multiple varying factors affecting the exam scores, such as willingness to study, and active retention of information / studying tactics. 
+
+Graph interpretation
+
+1. Histogram
+
+From this graph, I notice that the deviation from the median to 100, has a higher percentage of students than the median to the minimum score. The higher outliers are more prevalent than the low score outliers.
+
+2. Scatter Plot
+
+From this graph, I notice that there is a general positive correlation between study hours per week and exam score. The data is still very spread out, and is not a tight correlation. 
+
+3. sleep vs exam score graph
+
+From this graph, I notice that hours slept each night shows basically no correlation with exam score. Some students that have very little sleep, score similarly to those that sleep a lot each night.
 
 

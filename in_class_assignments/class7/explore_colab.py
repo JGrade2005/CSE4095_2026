@@ -200,3 +200,140 @@ print("The gap is far smaller than the spread inside either group.")
 # cannot be read as an effect of the study group itself.
 header("C (cont.) OTHER HABITS BY GROUP - possible confounders")
 display(df.groupby("study_group")[numerical].mean().round(2))
+
+
+# =====================================================================
+# PART 5 - Visualizations
+# =====================================================================
+import numpy as np
+import matplotlib.pyplot as plt
+
+# One palette, defined once, used by every figure.
+SURFACE   = "#fcfcfb"   # chart background
+PRIMARY   = "#0b0b0b"   # title ink
+SECONDARY = "#52514e"   # subtitle ink
+MUTED     = "#898781"   # axis labels and ticks
+GRID      = "#e1e0d9"   # hairline gridlines
+AXIS      = "#c3c2b7"   # baseline
+BLUE      = "#2a78d6"   # series 1
+ORANGE    = "#eb6834"   # series 2 (reference lines, trend lines)
+
+plt.rcParams.update({
+    "figure.facecolor": SURFACE,
+    "axes.facecolor": SURFACE,
+    "font.family": "sans-serif",
+    "font.size": 10,
+})
+
+
+def style(ax, title, subtitle, xlabel, ylabel):
+    """Apply the shared chart chrome: titles, axis labels, recessive grid."""
+    ax.set_title(title, loc="left", fontsize=13, fontweight="600",
+                 color=PRIMARY, pad=28)
+    ax.text(0, 1.03, subtitle, transform=ax.transAxes,
+            fontsize=10, color=SECONDARY)
+    ax.set_xlabel(xlabel, fontsize=10.5, color=SECONDARY, labelpad=8)
+    ax.set_ylabel(ylabel, fontsize=10.5, color=SECONDARY, labelpad=8)
+
+    # Grid sits behind the data as a solid hairline, never dashed.
+    ax.set_axisbelow(True)
+    ax.grid(True, axis="both", color=GRID, linewidth=0.8)
+    ax.tick_params(colors=MUTED, labelsize=9.5, length=0)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    for side in ("left", "bottom"):
+        ax.spines[side].set_color(AXIS)
+        ax.spines[side].set_linewidth(0.8)
+
+
+def scatter_vs_exam(xcol, title, subtitle, xlabel):
+    """Scatter of one habit against exam score, with a least-squares trend line."""
+    sub = df[[xcol, "exam_score"]].dropna()
+    x, y = sub[xcol], sub["exam_score"]
+    r = x.corr(y)
+
+    fig, ax = plt.subplots(figsize=(8, 5.2))
+
+    # 2px surface ring keeps overlapping students readable instead of a blob.
+    ax.scatter(x, y, s=48, color=BLUE, alpha=0.75,
+               edgecolors=SURFACE, linewidths=1.2, zorder=3,
+               label=f"Student (n = {len(sub)})")
+
+    slope, intercept = np.polyfit(x, y, 1)
+    xs = np.array([x.min(), x.max()])
+    ax.plot(xs, slope * xs + intercept, color=ORANGE, linewidth=2, zorder=4,
+            label=f"Trend: {slope:+.2f} pts per unit  (r = {r:.2f})")
+
+    style(ax, title, subtitle, xlabel, "Exam score (points)")
+    leg = ax.legend(frameon=False, loc="lower right", fontsize=9.5)
+    for text in leg.get_texts():
+        text.set_color(SECONDARY)
+
+    fig.tight_layout()
+    plt.show()
+    return r
+
+
+# ---------------------------------------------------------------------
+# Visualization 1 - Histogram of exam_score
+# ---------------------------------------------------------------------
+mean_exam = df["exam_score"].mean()
+median_exam = df["exam_score"].median()
+
+fig, ax = plt.subplots(figsize=(8, 5.2))
+
+bins = np.arange(50, 105, 5)
+ax.hist(df["exam_score"], bins=bins, color=BLUE,
+        edgecolor=SURFACE, linewidth=1.5, zorder=3)   # surface gap, not a border
+
+ax.axvline(mean_exam, color=ORANGE, linewidth=2, zorder=4,
+           label=f"Mean = {mean_exam:.1f}   (median = {median_exam:.1f})")
+
+style(ax,
+      f"Exam scores are symmetric and centred near {mean_exam:.0f} points",
+      f"All {df['exam_score'].notna().sum()} students · 5-point bins · "
+      f"range {df['exam_score'].min():.1f} to {df['exam_score'].max():.1f}",
+      "Exam score (points)",
+      "Number of students")
+ax.grid(False, axis="x")
+
+leg = ax.legend(frameon=False, loc="upper right", fontsize=9.5)
+for text in leg.get_texts():
+    text.set_color(SECONDARY)
+
+fig.tight_layout()
+plt.show()
+
+
+# ---------------------------------------------------------------------
+# Visualization 2 - Study hours vs exam score
+# ---------------------------------------------------------------------
+r_study = scatter_vs_exam(
+    "study_hours_per_week",
+    "More weekly study hours track with higher exam scores",
+    "Each dot is one student. 9 students with a blank study-hours value are omitted.",
+    "Study hours per week",
+)
+
+
+# ---------------------------------------------------------------------
+# Visualization 3 - Sleep vs exam score
+# ---------------------------------------------------------------------
+r_sleep = scatter_vs_exam(
+    "sleep_hours_per_night",
+    "Nightly sleep shows almost no relationship with exam score",
+    "Each dot is one student. 12 students with a blank sleep value are omitted.",
+    "Sleep hours per night",
+)
+
+
+# ---------------------------------------------------------------------
+# Comparison of the two relationships
+# ---------------------------------------------------------------------
+header("WHAT THE TWO SCATTER PLOTS SHOW")
+print(f"study_hours_per_week vs exam_score:  r = {r_study:+.3f}   "
+      f"r^2 = {r_study ** 2:.3f}")
+print(f"sleep_hours_per_night vs exam_score: r = {r_sleep:+.3f}   "
+      f"r^2 = {r_sleep ** 2:.3f}")
+print("\nr^2 is the share of variation in exam score that the habit accounts for.")
+print("Neither plot establishes cause: these are observed habits, not assigned ones.")
