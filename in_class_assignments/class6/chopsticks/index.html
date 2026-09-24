@@ -24,11 +24,11 @@
     </div>
     <div class="stat">
       <span class="stat-k">Level</span>
-      <span class="stat-v" id="hud-level">0 / 26</span>
+      <span class="stat-v" id="hud-level">0 / 40</span>
     </div>
     <div class="stat">
       <span class="stat-k">Moves left</span>
-      <span class="stat-v" id="hud-moves">26</span>
+      <span class="stat-v" id="hud-moves">40</span>
     </div>
     <div class="stat">
       <span class="stat-k">Opponent</span>
@@ -91,9 +91,17 @@
           </button>
         </div>
 
+        <p class="choice-k">Game length</p>
+        <div class="length">
+          <input type="range" id="choose-depth" min="10" max="60" step="2" value="40"
+                 aria-label="Game length in plies" aria-describedby="depth-note">
+          <output class="length-read" id="depth-read" for="choose-depth">40 plies</output>
+        </div>
+        <p class="length-note" id="depth-note">20 moves each. Long enough for Player B to force a win &mdash; A is the losing side.</p>
+
         <div class="sheet-actions">
           <button type="button" class="btn btn-primary btn-lg" id="btn-start">Start game</button>
-          <span class="status" id="setup-note">Player A is theoretically lost at this depth &mdash; pick B for the easier side.</span>
+          <span class="status" id="setup-note">Mostly optimal, and avoids outright blunders the rest of the time.</span>
         </div>
       </div>
     </div>
@@ -126,8 +134,18 @@
 (() => {
   "use strict";
 
-  const MOVES = 13;            // per player, so the horizon sits at 26 plies
-  const DEPTH = MOVES * 2;
+  /*
+   * How far ahead the game is played before it is called a draw. Kept even
+   * so both players get the same number of turns.
+   *
+   * The horizon is not just a budget, it decides the game: under 26 plies
+   * neither side can force a result and best play draws, while at 26 and
+   * above Player B has a forced win. The setup screen says which you picked.
+   */
+  const DEFAULT_DEPTH = 40;
+  const MIN_DEPTH = 10;
+  const MAX_DEPTH = 60;
+  const SOLVED_DEPTH = 26;
 
   /* ------------------------------------------------------- Scene layout */
   const H = 720;
@@ -292,7 +310,8 @@
   const ui = {
     humanRole: "A",
     difficulty: "normal",
-    depth: DEPTH,
+    depth: DEFAULT_DEPTH,
+    tableDepth: null,   // the depth ui.table was actually built for
     state: null,
     table: null,
     phase: "setup",     // setup | choose | act | animating | ai | over
@@ -303,6 +322,8 @@
     target: null,       // computer hand currently being aimed at
     aim: null,          // non-null while aiming with the keyboard
     inputMode: "keys",  // whichever of pointer / keys was used last
+    busy: false,        // a move is playing out; ignore further input
+    actor: null,        // who is mid-move, while one is animating
     cursor: null,       // pointer position, in scene coordinates
     spotlight: null,    // slot key under the torch
     lightPair: null,    // two slots lit together, during a split
@@ -366,7 +387,13 @@
     return isLit(key) ? "lit" : "dim";
   }
 
-  /* ----------------------------------------------------------- Render */
+  /* ----------------------------------------------------------- Render
+     The scene is built once. After that every change is an attribute
+     update on a cached node - rebuilding markup inside the frame loop was
+     the main source of stutter, and stutter reads as a dropped click.
+     ----------------------------------------------------------------- */
+  const els = {};
+
   function render() {
     const layers = [];
 
@@ -388,7 +415,8 @@
     layers.push(`<path class="horizon" d="M 46 ${HORIZON_Y + 6}
       Q 260 ${HORIZON_Y - 10} 500 ${HORIZON_Y - 2}
       Q 740 ${HORIZON_Y + 8} 958 ${HORIZON_Y - 4}"/>`);
-    layers.push(`<g id="arms"></g>`);
+    layers.push(`<g id="arms">${ORDER.map((key) =>
+      `<path class="arm ${isNearSlot(key) ? "" : "is-far"}" data-arm="${key}" d=""/>`).join("")}</g>`);
     layers.push(`<path class="head" d="M 484 ${HEAD_Y - 18} Q 500 ${HEAD_Y - 30} 516 ${HEAD_Y - 18}
       L 518 ${HEAD_Y + 16} Q 500 ${HEAD_Y + 25} 482 ${HEAD_Y + 16} Z"/>`);
 
@@ -398,8 +426,7 @@
       const w = SPRITE_W * slot.px, h = SPRITE_H * slot.px;
       const ix = -WRIST.x * slot.px, iy = -WRIST.y * slot.px;
       const sprite = `<image class="hand-sprite" data-sprite="${key}"
-        href="${SPRITES[paletteFor(key)][countOf(key)]}"
-        x="${ix}" y="${iy}" width="${w}" height="${h}"/>`;
+        href="${SPRITES.lit[1]}" x="${ix}" y="${iy}" width="${w}" height="${h}"/>`;
 
       layers.push(`<g data-hand="${key}">
         <g data-inner="${key}">
@@ -415,29 +442,61 @@
 
     // --- readable over any amount of dimming ----------------------------
     for (const key of ORDER) {
-      const n = countOf(key);
-      const cls = ["hand"];
-      if (n === 0) cls.push("is-dead");
-      if (isNearSlot(key) && ui.focus === indexOf(key) && (ui.phase === "choose" || ui.phase === "act")) cls.push("is-focus");
-      if (!isNearSlot(key) && ui.target === key) cls.push("is-target");
-      layers.push(`<g class="${cls.join(" ")}">${badge(key, n)}</g>`);
+      layers.push(`<g class="hand" data-badgewrap="${key}">${badge(key)}</g>`);
     }
 
-    if (ui.phase === "ai") {
-      layers.push(`<text class="thinking-note" id="note" x="500" y="185">thinking</text>`);
-    }
-
+    layers.push(`<text class="thinking-note" id="note" x="500" y="185" hidden>thinking</text>`);
     layers.push(`<g id="fx"></g>`);
 
     scene.innerHTML = layers.join("");
-    for (const key of ORDER) spriteSig[key] = null;
+    cacheEls();
+    for (const key of ORDER) { spriteSig[key] = null; reticleSig[key] = null; }
+    refresh();
+  }
+
+  /** Look every node up once, so the frame loop never touches the DOM tree. */
+  function cacheEls() {
+    els.inner = {}; els.sprite = {}; els.reticle = {};
+    els.arm = {}; els.badgeWrap = {}; els.badgeNum = {};
+    for (const key of ORDER) {
+      els.inner[key] = scene.querySelector(`[data-inner="${key}"]`);
+      els.sprite[key] = scene.querySelector(`[data-sprite="${key}"]`);
+      els.reticle[key] = scene.querySelector(`[data-reticle="${key}"]`);
+      els.arm[key] = scene.querySelector(`[data-arm="${key}"]`);
+      els.badgeWrap[key] = scene.querySelector(`[data-badgewrap="${key}"]`);
+      els.badgeNum[key] = scene.querySelector(`[data-badge="${key}"] .badge-num`);
+    }
+    els.dim = scene.querySelector("#dimgrad");
+    els.grad = scene.querySelector("#torchgrad");
+    els.torch = scene.querySelector("#torch");
+    els.note = scene.querySelector("#note");
+    els.fx = scene.querySelector("#fx");
+  }
+
+  /**
+   * Bring every changeable part of the scene up to date without rebuilding
+   * it. This replaces what used to be a full re-render on every keypress.
+   */
+  function refresh() {
+    for (const key of ORDER) {
+      const n = countOf(key);
+      const wrap = els.badgeWrap[key];
+      if (wrap) {
+        wrap.classList.toggle("is-dead", n === 0);
+        wrap.classList.toggle("is-focus", isNearSlot(key) && ui.focus === indexOf(key) &&
+          (ui.phase === "choose" || ui.phase === "act"));
+        wrap.classList.toggle("is-target", !isNearSlot(key) && ui.target === key);
+      }
+      if (els.badgeNum[key]) els.badgeNum[key].textContent = n;
+    }
+    if (els.note) els.note.toggleAttribute("hidden", ui.phase !== "ai");
     syncSprites();
     syncReticles();
     positionAll();
     syncHud();
   }
 
-  function badge(key, n) {
+  function badge(key) {
     const slot = SLOTS[key];
     const out = slot.flip ? 1 : -1;
     const near = isNearSlot(key);
@@ -448,7 +507,7 @@
     return `<g data-badge="${key}">
       <path class="badge-lead" d="M ${slot.x + out * (near ? 62 : 32)} ${slot.y - (near ? 62 : 34)} L ${bx - out * r} ${by + 4}"/>
       <circle class="badge-ring" cx="${bx}" cy="${by}" r="${r}"/>
-      <text class="badge-num" x="${bx}" y="${by + 1}" style="font-size:${fs}px">${n}</text>
+      <text class="badge-num" x="${bx}" y="${by + 1}" style="font-size:${fs}px">1</text>
       <text class="badge-tag" x="${bx}" y="${by + r + 17}">${slot.tag}</text>
     </g>`;
   }
@@ -463,40 +522,29 @@
   }
 
   const spriteSig = {};
+  const reticleSig = {};
 
   /** Swap a hand's sprite only when its pose or lighting actually changed. */
   function syncSprites() {
     for (const key of ORDER) {
-      const n = countOf(key);
-      const pal = paletteFor(key);
-      const sig = pal + n;
+      const sig = paletteFor(key) + countOf(key);
       if (spriteSig[key] === sig) continue;
       spriteSig[key] = sig;
-      const img = scene.querySelector(`[data-sprite="${key}"]`);
-      if (img) img.setAttribute("href", SPRITES[pal][n]);
+      if (els.sprite[key]) els.sprite[key].setAttribute("href", SPRITES[paletteFor(key)][countOf(key)]);
     }
   }
 
   function syncReticles() {
     for (const key of ORDER) {
-      const g = scene.querySelector(`[data-reticle="${key}"]`);
+      const g = els.reticle[key];
       if (!g) continue;
-      const px = SLOTS[key].px;
-      if (isNearSlot(key) && ui.focus === indexOf(key) && (ui.phase === "choose" || ui.phase === "act")) {
-        g.innerHTML = reticleMarkup(px, "");
-      } else if (!isNearSlot(key) && ui.target === key) {
-        g.innerHTML = reticleMarkup(px, "is-target");
-      } else {
-        g.innerHTML = "";
-      }
+      let sig = "";
+      if (isNearSlot(key) && ui.focus === indexOf(key) && (ui.phase === "choose" || ui.phase === "act")) sig = "own";
+      else if (!isNearSlot(key) && ui.target === key) sig = "target";
+      if (reticleSig[key] === sig) continue;
+      reticleSig[key] = sig;
+      g.innerHTML = sig ? reticleMarkup(SLOTS[key].px, sig === "target" ? "is-target" : "") : "";
     }
-  }
-
-  function refreshHand(key) {
-    const n = countOf(key);
-    const num = scene.querySelector(`[data-badge="${key}"] .badge-num`);
-    if (num) num.textContent = n;
-    syncSprites();
   }
 
   /* ------------------------------------------------ Placement and light */
@@ -518,7 +566,7 @@
 
   /** Where the torch points, and how wide its pool is. */
   function lightTarget() {
-    if (ui.lightPair) {
+    if (ui.lightPair && SLOTS[ui.lightPair[0]] && SLOTS[ui.lightPair[1]]) {
       const [k1, k2] = ui.lightPair;
       const p1 = livePos(k1), p2 = livePos(k2), px = SLOTS[k1].px;
       return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 - 15 * px, r: 62 * px };
@@ -527,41 +575,32 @@
       const s = SLOTS[ui.spotlight], p = livePos(ui.spotlight);
       return { x: p.x, y: p.y - 15 * s.px, r: 40 * s.px };
     }
-    if (ui.phase === "ai") {
-      return { x: 500, y: SLOTS.fL.y - 30, r: 300 };
-    }
+    if (ui.phase === "ai") return { x: 500, y: SLOTS.fL.y - 30, r: 300 };
     return { x: 500, y: 420, r: 620 };
   }
 
   function updateLight() {
+    if (!els.dim || !els.grad || !els.torch) return;
     const t = lightTarget();
-    const dim = scene.querySelector("#dimgrad");
-    const grad = scene.querySelector("#torchgrad");
-    const circle = scene.querySelector("#torch");
-    if (!dim || !grad || !circle) return;
-
-    dim.setAttribute("cx", t.x); dim.setAttribute("cy", t.y);
-    dim.setAttribute("r", t.r * 2.6);
-    grad.setAttribute("cx", t.x); grad.setAttribute("cy", t.y);
-    grad.setAttribute("r", t.r);
-    circle.setAttribute("cx", t.x); circle.setAttribute("cy", t.y);
-    circle.setAttribute("r", t.r);
+    els.dim.setAttribute("cx", t.x); els.dim.setAttribute("cy", t.y);
+    els.dim.setAttribute("r", t.r * 2.6);
+    els.grad.setAttribute("cx", t.x); els.grad.setAttribute("cy", t.y);
+    els.grad.setAttribute("r", t.r);
+    els.torch.setAttribute("cx", t.x); els.torch.setAttribute("cy", t.y);
+    els.torch.setAttribute("r", t.r);
   }
 
   function positionAll() {
     for (const key of ORDER) {
-      const g = scene.querySelector(`[data-inner="${key}"]`);
-      if (g) g.setAttribute("transform", handTransform(key));
-    }
-    const arms = scene.querySelector("#arms");
-    if (arms) {
-      arms.innerHTML = ORDER.map((key) => {
+      if (els.inner[key]) els.inner[key].setAttribute("transform", handTransform(key));
+      const arm = els.arm[key];
+      if (arm) {
         const root = ARM_ROOT[key], w = wrist(key);
         const far = !isNearSlot(key);
         const midX = (root.x + w.x) / 2 + (far ? 0 : (w.x - root.x) * 0.12);
         const midY = (root.y + w.y) / 2;
-        return `<path class="arm ${far ? "is-far" : ""}" d="M ${root.x} ${root.y} Q ${midX} ${midY} ${w.x} ${w.y}"/>`;
-      }).join("");
+        arm.setAttribute("d", `M ${root.x} ${root.y} Q ${midX} ${midY} ${w.x} ${w.y}`);
+      }
     }
     updateLight();
   }
@@ -569,7 +608,19 @@
   let lastTick = 0;
   let dots = 0;
 
+  let lastPhase = null, phaseSince = 0;
+
   function loop(t) {
+    // Watchdog. Nothing should hold a turn for eight seconds - the longest
+    // real one is a think plus an animation, well under three. If we are
+    // still here, something stalled, so get play moving again rather than
+    // leaving a dead page that can only be fixed by reloading.
+    if (ui.phase !== lastPhase) { lastPhase = ui.phase; phaseSince = t; }
+    if ((ui.phase === "animating" || ui.phase === "ai") && t - phaseSince > 8000) {
+      phaseSince = t;
+      recoverTurn();
+    }
+
     if (!reduceMotion) {
       const time = t / 1000;
       const carried = carriedKey();
@@ -583,13 +634,10 @@
       }
       positionAll();
 
-      if (t - lastTick > 320) {
+      if (t - lastTick > 320 && els.note && !els.note.hasAttribute("hidden")) {
         lastTick = t;
-        const note = scene.querySelector("#note");
-        if (note) {
-          dots = (dots + 1) % 4;
-          note.textContent = "thinking" + ".".repeat(dots);
-        }
+        dots = (dots + 1) % 4;
+        els.note.textContent = "thinking" + ".".repeat(dots);
       }
     }
     requestAnimationFrame(loop);
@@ -617,11 +665,11 @@
   function commit(move) {
     ui.state = move.state;
     ui.preview = null;
-    for (const key of ORDER) refreshHand(key);
+    refresh();
   }
 
   function impactAt(x, y, px) {
-    const fx = scene.querySelector("#fx");
+    const fx = els.fx;
     if (!fx || reduceMotion) return;
     const marks = [];
     for (let i = 0; i < 7; i++) {
@@ -737,23 +785,85 @@
   }
 
   /* ------------------------------------------------------- Turn flow */
+  /** Every hand back on its mark, with no animation offsets left over. */
+  function clearOffsets() {
+    for (const key of ORDER) {
+      const d = drift[key];
+      d.ox = d.oy = d.extra = d.arot = 0;
+    }
+  }
+
+  /**
+   * Play a move through to the next turn.
+   *
+   * The animation is wrapped because a throw in here used to strand
+   * `ui.phase` on "animating" forever - every handler early-returns on the
+   * phase, so the game went dead and the only way out was reloading the
+   * tab. Whatever happens to the animation, the move still stands and the
+   * turn still advances.
+   */
+  let moveSeq = 0;
+
   async function playMove(move) {
+    if (ui.busy || ui.phase === "over") return;
+    const seq = ++moveSeq;
+    ui.busy = true;
     ui.phase = "animating";
+    ui.actor = move.actor;
     ui.preview = null;
     ui.aim = null;
     ui.cursor = null;
     stage.classList.remove("is-carrying");
-    render();
+    refresh();
 
-    if (move.type === "attack") await animateAttack(move);
-    else await animateSplit(move);
+    try {
+      if (move.type === "attack") await animateAttack(move);
+      else await animateSplit(move);
+    } catch (err) {
+      console.error("Chopsticks: animation failed, skipping to the result.", err);
+      ui.state = move.state;
+      ui.preview = null;
+      clearOffsets();
+    } finally {
+      ui.busy = false;
+    }
 
-    render();
+    // If a recovery already moved play on while this animation was stuck,
+    // this call is stale and must not advance the turn a second time.
+    if (seq !== moveSeq) return;
+    advanceTurn();
+  }
 
+  /** Hand play on to whoever is next, or end the game. */
+  function advanceTurn() {
+    ui.target = null;
+    ui.lightPair = null;
+    refresh();
     const result = Game.outcome(ui.state, ui.depth);
     if (result.over) return endGame(result);
     if (Game.turn(ui.state) === ui.humanRole) beginHumanTurn();
     else beginAiTurn();
+  }
+
+  /** Last resort: unstick a turn that stalled, without losing the game. */
+  let lastRecovery = -Infinity;
+
+  function recoverTurn() {
+    const now = performance.now();
+    if (now - lastRecovery < 1500) {
+      // Recovering straight back into the same failure would spin forever.
+      console.error("Chopsticks: recovery is looping, stopping here.");
+      ui.busy = false;
+      ui.phase = "choose";
+      setStatus("Something went wrong mid-turn. Press <b>New game</b> to start over.");
+      return;
+    }
+    lastRecovery = now;
+    console.warn("Chopsticks: turn stalled, recovering.");
+    moveSeq++;              // any in-flight move is now stale
+    ui.busy = false;
+    clearOffsets();
+    advanceTurn();
   }
 
   function beginHumanTurn() {
@@ -768,7 +878,7 @@
     const hands = humanHands();
     if (hands[ui.focus] === 0 && hands[1 - ui.focus] > 0) ui.focus = 1 - ui.focus;
     ui.spotlight = slotFor(ui.humanRole, ui.focus);
-    render();
+    refresh();
     setStatus(`Your turn. <kbd>&larr;</kbd> <kbd>&rarr;</kbd> to light up a hand, <kbd>Enter</kbd> to pick it up.`);
   }
 
@@ -776,20 +886,25 @@
     ui.phase = "ai";
     ui.spotlight = null;
     ui.lightPair = null;
-    render();
+    refresh();
     setStatus(`<b>Player ${cpuRole()}</b> is thinking&hellip;`);
 
-    ui.analysis = AI.analyze(ui.table, ui.state);
-    renderAnalysis();
+    try {
+      ui.analysis = AI.analyze(ui.table, ui.state);
+      renderAnalysis();
 
-    // A pause so the computer reads as deliberating rather than snapping.
-    await wait(700 + Math.random() * 700);
+      // A pause so the computer reads as deliberating rather than snapping.
+      await wait(700 + Math.random() * 700);
 
-    const move = AI.chooseMove(ui.table, ui.state, ui.difficulty);
-    if (!move) return endGame(Game.outcome(ui.state, ui.depth));
+      const move = AI.chooseMove(ui.table, ui.state, ui.difficulty);
+      if (!move) return endGame(Game.outcome(ui.state, ui.depth));
 
-    setStatus(`<b>Player ${cpuRole()}</b> plays <em>${Game.describe(move)}</em>.`);
-    await playMove(move);
+      setStatus(`<b>Player ${cpuRole()}</b> plays <em>${Game.describe(move)}</em>.`);
+      await playMove(move);
+    } catch (err) {
+      console.error("Chopsticks: the computer's turn failed.", err);
+      recoverTurn();
+    }
   }
 
   function endGame(result) {
@@ -801,7 +916,7 @@
     stage.classList.remove("is-carrying");
     ui.spotlight = null;
     ui.lightPair = null;
-    render();
+    refresh();
 
     const overlay = document.getElementById("overlay-over");
     const verdict = document.getElementById("over-verdict");
@@ -838,7 +953,7 @@
     ui.cursor = null;
     ui.spotlight = selectedKey();
     resetCarry();
-    render();
+    refresh();
     announceIdle();
   }
 
@@ -862,7 +977,7 @@
     const option = ui.splits[ui.splitIndex];
     ui.preview = option.isCurrent ? null : option.counts.slice();
     ui.lightPair = [slotFor(ui.humanRole, 0), slotFor(ui.humanRole, 1)];
-    render();
+    refresh();
 
     if (option.isCurrent) {
       setStatus(`Back to <b>${option.counts[0]}&ndash;${option.counts[1]}</b>, where you started. Keep scrubbing to find a split.`);
@@ -886,7 +1001,7 @@
         e.preventDefault();
         ui.focus = 1 - ui.focus;
         ui.spotlight = slotFor(ui.humanRole, ui.focus);
-        render();
+        refresh();
         const n = humanHands()[ui.focus];
         setStatus(n === 0
           ? `<b>${SLOTS[ui.spotlight].tag}</b> is out, so it cannot attack &mdash; but you can still redistribute onto it.`
@@ -932,10 +1047,19 @@
     return new DOMPoint(evt.clientX, evt.clientY).matrixTransform(ctm.inverse());
   }
 
-  /** Nearest computer hand to a scene point, if it is a legal target. */
+  /*
+   * Anywhere on the computer's side of the table counts as aiming at it,
+   * and the nearest live hand wins. The old version wanted the cursor
+   * within 130 units of a hand centre that is itself drifting, so a near
+   * miss was a dead click with no feedback. The reticle always shows which
+   * hand is picked, so being generous here costs nothing.
+   */
+  const OPPONENT_ZONE_Y = 470;
+
   function targetAt(p) {
     if (humanHands()[ui.focus] === 0) return null;
-    let best = null, bestD = 130;
+    if (p.y > OPPONENT_ZONE_Y) return null;
+    let best = null, bestD = Infinity;
     for (const key of liveTargets()) {
       const c = livePos(key);
       const d = Math.hypot(p.x - c.x, p.y - (c.y - 15 * SLOTS[key].px));
@@ -943,6 +1067,11 @@
     }
     return best;
   }
+
+  /** The analysis panel and the overlays sit inside the stage, but they
+      are chrome - pointer events there are not moves on the table. */
+  const overChrome = (e) =>
+    !!(e.target && e.target.closest && e.target.closest(".analysis, .overlay"));
 
   function setTarget(key) {
     if (key === ui.target) return;
@@ -953,6 +1082,7 @@
   }
 
   function attack(targetKey) {
+    if (ui.busy) return;
     const move = Game.findAttack(ui.state, ui.focus, indexOf(targetKey));
     if (!move) {
       setStatus("That is not a legal attack &mdash; a hand that is out can neither hit nor be hit.");
@@ -979,6 +1109,7 @@
 
   stage.addEventListener("pointermove", (e) => {
     if (ui.phase !== "act") return;
+    if (overChrome(e)) { stage.classList.remove("is-carrying"); return; }
     if (ui.aim) stopAiming();
     ui.inputMode = "pointer";
     ui.cursor = toScene(e);
@@ -991,7 +1122,8 @@
   // Also picks the hand up: a first click, or a touch, arrives with no
   // preceding pointermove, and should still work.
   stage.addEventListener("pointerdown", (e) => {
-    if (ui.phase !== "act") return;
+    if (ui.phase !== "act" || ui.busy) return;
+    if (overChrome(e)) return;
     if (ui.aim) stopAiming();
     ui.inputMode = "pointer";
     ui.cursor = toScene(e);
@@ -1000,7 +1132,7 @@
     stage.classList.add("is-carrying");
     positionAll();
     if (ui.target) return attack(ui.target);
-    setStatus("Bring the hand over one of the computer's hands and click to strike, or press <kbd>&uarr;</kbd> to aim with the keyboard.");
+    setStatus("Move up over the computer's side of the table and click to strike, or use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> to slide fingers between your own hands.");
   });
 
   stage.addEventListener("pointerleave", () => {
@@ -1064,11 +1196,27 @@
   }
 
   /* --------------------------------------------------- HUD + panel */
+  /*
+   * Whose move is happening right now, which is NOT the same as whose turn
+   * the position says it is: the board is updated at the moment of impact,
+   * while the animation still has half a second left to run. Reading the
+   * turn straight off the state flipped the HUD to "You" mid-swing, so the
+   * game looked unresponsive - keys were being pressed into an animating
+   * phase that ignores them.
+   */
+  function actingPlayer() {
+    if (ui.phase === "over") return null;
+    if (ui.phase === "animating") return ui.actor;
+    if (ui.phase === "ai") return cpuRole();
+    return Game.turn(ui.state);
+  }
+
   function syncHud() {
     if (!ui.state) return;
+    const acting = actingPlayer();
     document.getElementById("hud-role").textContent = `Player ${ui.humanRole}`;
     document.getElementById("hud-turn").textContent =
-      ui.phase === "over" ? "—" : (Game.turn(ui.state) === ui.humanRole ? "You" : `Player ${cpuRole()}`);
+      acting === null ? "—" : (acting === ui.humanRole ? "You" : `Player ${acting}`);
     document.getElementById("hud-level").textContent = `${ui.state.level} / ${ui.depth}`;
     document.getElementById("hud-moves").textContent = String(Math.max(0, ui.depth - ui.state.level));
     document.getElementById("hud-diff").textContent = AI.DIFFICULTY[ui.difficulty].label;
@@ -1132,6 +1280,30 @@
   }
 
   bindChoices("choose-role", "role", (role) => { ui.humanRole = role; });
+
+  /** What a given horizon means for the game, in the player's terms. */
+  function describeDepth(depth) {
+    const each = depth / 2;
+    return depth < SOLVED_DEPTH
+      ? `${each} moves each. Too short for either side to force a result &mdash; best play ends in a draw at the horizon.`
+      : `${each} moves each. Long enough for Player B to force a win &mdash; A is the losing side.`;
+  }
+
+  const depthInput = document.getElementById("choose-depth");
+  depthInput.min = MIN_DEPTH;
+  depthInput.max = MAX_DEPTH;
+  depthInput.value = DEFAULT_DEPTH;
+
+  function syncDepth() {
+    // Even only, so both players get the same number of turns.
+    const depth = Math.max(MIN_DEPTH, Math.min(MAX_DEPTH, Math.round(depthInput.value / 2) * 2));
+    ui.depth = depth;
+    document.getElementById("depth-read").textContent = `${depth} plies`;
+    document.getElementById("depth-note").innerHTML = describeDepth(depth);
+  }
+
+  depthInput.addEventListener("input", syncDepth);
+  syncDepth();
   bindChoices("choose-diff", "diff", (diff) => {
     ui.difficulty = diff;
     document.getElementById("setup-note").textContent = AI.DIFFICULTY[diff].blurb;
@@ -1143,6 +1315,8 @@
 
     ui.state = Game.start();
     ui.focus = 0;
+    ui.busy = false;
+    ui.actor = null;
     ui.preview = null;
     ui.target = null;
     ui.aim = null;
@@ -1154,8 +1328,15 @@
     document.getElementById("analysis-body").innerHTML =
       `<p class="analysis-empty">Nothing to show yet. The panel fills in on the computer's turn with every move it weighed and what each one is worth.</p>`;
 
-    if (!ui.table) ui.table = AI.buildTable(ui.depth);
+    // Rebuild whenever the horizon moved: a table is only valid for the
+    // depth it was built at.
+    if (ui.tableDepth !== ui.depth) {
+      ui.table = AI.buildTable(ui.depth);
+      ui.tableDepth = ui.depth;
+    }
 
+    clearOffsets();
+    resetCarry();
     render();
     if (Game.turn(ui.state) === ui.humanRole) beginHumanTurn();
     else beginAiTurn();
@@ -1176,6 +1357,16 @@
   document.getElementById("btn-switch").addEventListener("click", backToSetup);
 
   /* -------------------------------------------------------------- Boot */
+
+  // Last line of defence: an error anywhere else must not leave the board
+  // frozen mid-turn with no way back except a reload.
+  function onFatal(e) {
+    console.error("Chopsticks: unexpected error.", e && (e.reason || e.error || e));
+    if (ui.phase === "animating" || ui.phase === "ai") recoverTurn();
+  }
+  window.addEventListener("error", onFatal);
+  window.addEventListener("unhandledrejection", onFatal);
+
   buildSprites();
   ui.state = Game.start();
   render();

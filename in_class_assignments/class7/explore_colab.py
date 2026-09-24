@@ -337,3 +337,186 @@ print(f"sleep_hours_per_night vs exam_score: r = {r_sleep:+.3f}   "
       f"r^2 = {r_sleep ** 2:.3f}")
 print("\nr^2 is the share of variation in exam score that the habit accounts for.")
 print("Neither plot establishes cause: these are observed habits, not assigned ones.")
+
+
+# =====================================================================
+# PART 6 - Focused investigation: quiz_average vs exam_score
+#
+# PREDICTION (written before looking at the result):
+#   I expect quiz_average to be associated with exam score because both
+#   measure the same underlying thing - how well a student has learned the
+#   course material - using the same kind of task, only weeks apart. A
+#   student who has understood the material should demonstrate it on both.
+# =====================================================================
+
+# --- 1. Visualization ------------------------------------------------
+r_quiz = scatter_vs_exam(
+    "quiz_average",
+    "Quiz average is the strongest single predictor of exam score",
+    "Each dot is one student. All 250 students have both scores, so none are omitted.",
+    "Quiz average (points)",
+)
+
+# --- 2. Correlation --------------------------------------------------
+header("CORRELATION: quiz_average vs exam_score")
+print(f"Pearson r          = {r_quiz:+.3f}")
+print(f"r squared          = {r_quiz ** 2:.3f}  "
+      f"({r_quiz ** 2 * 100:.1f}% of exam-score variation accounted for)")
+print(f"Students compared  = {df[['quiz_average', 'exam_score']].dropna().shape[0]}")
+
+slope, intercept = np.polyfit(df["quiz_average"], df["exam_score"], 1)
+residuals = df["exam_score"] - (slope * df["quiz_average"] + intercept)
+print(f"\nFitted line        : exam = {slope:.3f} x quiz + {intercept:.2f}")
+print(f"Typical miss       : {residuals.std():.2f} points "
+      f"(std of the vertical distance from the line)")
+print(f"\nInterpretation: 10 more quiz points corresponds to about "
+      f"{slope * 10:.1f} more exam points on average,")
+print("but individual students still land several points either side of that line.")
+
+
+# --- How every numerical variable compares ---------------------------
+corrs = (df[numerical].drop(columns=["exam_score"])
+         .corrwith(df["exam_score"])
+         .sort_values())
+
+fig, ax = plt.subplots(figsize=(8, 4.6))
+
+# Emphasis, not a value ramp: the variable under investigation is highlighted,
+# the rest recede to a neutral so the comparison reads at a glance.
+colors = [BLUE if name == "quiz_average" else MUTED for name in corrs.index]
+ax.barh(corrs.index, corrs.values, color=colors,
+        edgecolor=SURFACE, linewidth=1.5, height=0.72, zorder=3)
+
+for name, value in corrs.items():
+    ax.text(value + 0.012, name, f"{value:+.2f}", va="center",
+            fontsize=9.5, color=SECONDARY)
+
+style(ax,
+      "Quiz average correlates with exam score far more than any habit does",
+      "Pearson correlation with exam_score · missing values excluded per variable",
+      "Correlation with exam score (r)",
+      "")
+ax.grid(False, axis="y")
+ax.set_xlim(0, max(corrs.values) * 1.18)
+
+fig.tight_layout()
+plt.show()
+
+
+# =====================================================================
+# PART 7 - Does a longer commute cost you attendance?
+#
+# PREDICTION (written before looking at the result):
+#   I expect commute_minutes to be negatively associated with
+#   attendance_rate, because a longer trip raises the cost of showing up
+#   and gives more chances for something to go wrong on the way.
+# =====================================================================
+
+def scatter_relationship(xcol, ycol, title, subtitle, xlabel, ylabel):
+    """Generic scatter of any two numerical columns, with a least-squares fit."""
+    sub = df[[xcol, ycol]].dropna()
+    x, y = sub[xcol], sub[ycol]
+    r = x.corr(y)
+
+    fig, ax = plt.subplots(figsize=(8, 5.2))
+    ax.scatter(x, y, s=48, color=BLUE, alpha=0.75,
+               edgecolors=SURFACE, linewidths=1.2, zorder=3,
+               label=f"Student (n = {len(sub)})")
+
+    slope, intercept = np.polyfit(x, y, 1)
+    xs = np.array([x.min(), x.max()])
+    ax.plot(xs, slope * xs + intercept, color=ORANGE, linewidth=2, zorder=4,
+            label=f"Trend: {slope:+.3f} per unit  (r = {r:.2f})")
+
+    style(ax, title, subtitle, xlabel, ylabel)
+    leg = ax.legend(frameon=False, loc="lower right", fontsize=9.5)
+    for text in leg.get_texts():
+        text.set_color(SECONDARY)
+
+    fig.tight_layout()
+    plt.show()
+    return r
+
+
+# --- 1. Visualization ------------------------------------------------
+r_commute = scatter_relationship(
+    "commute_minutes", "attendance_rate",
+    "Commute length has no visible effect on attendance",
+    "Each dot is one student. The fitted line is essentially flat.",
+    "Commute (minutes each way)",
+    "Attendance rate (%)",
+)
+
+# --- 2. Correlation --------------------------------------------------
+header("CORRELATION: commute_minutes vs attendance_rate")
+print(f"Pearson r  = {r_commute:+.4f}   (linear relationship)")
+print(f"r squared  = {r_commute ** 2:.4f}   "
+      f"({r_commute ** 2 * 100:.2f}% of attendance variation accounted for)")
+
+# Commute is right-skewed, so also check the rank correlation, which does not
+# assume a straight-line relationship and is not pulled by the long tail.
+rho = df["commute_minutes"].corr(df["attendance_rate"], method="spearman")
+print(f"Spearman rho = {rho:+.4f}   (rank relationship, robust to the skew)")
+print("\nBoth are indistinguishable from zero.")
+
+
+# --- 3. Grouped check: does the pattern hide inside the average? ------
+header("ATTENDANCE BY COMMUTE QUARTILE")
+
+df["commute_quartile"] = pd.qcut(
+    df["commute_minutes"], 4,
+    labels=["Q1 shortest", "Q2", "Q3", "Q4 longest"],
+)
+
+by_commute = df.groupby("commute_quartile", observed=True).agg(
+    n_students=("attendance_rate", "count"),
+    min_commute=("commute_minutes", "min"),
+    max_commute=("commute_minutes", "max"),
+    mean_attendance=("attendance_rate", "mean"),
+    median_attendance=("attendance_rate", "median"),
+    mean_exam=("exam_score", "mean"),
+).round(2)
+display(by_commute)
+
+fig, ax = plt.subplots(figsize=(8, 4.8))
+ax.bar(by_commute.index.astype(str), by_commute["mean_attendance"],
+       color=BLUE, edgecolor=SURFACE, linewidth=1.5, width=0.68, zorder=3)
+
+overall = df["attendance_rate"].mean()
+ax.axhline(overall, color=ORANGE, linewidth=2, zorder=4,
+           label=f"Class average = {overall:.1f}%")
+
+for label, value in by_commute["mean_attendance"].items():
+    ax.text(str(label), value + 1.5, f"{value:.1f}%", ha="center",
+            fontsize=9.5, color=SECONDARY)
+
+style(ax,
+      "Attendance is flat across every commute length",
+      "Mean attendance by commute quartile · y-axis starts at 0 so the "
+      "differences are not exaggerated",
+      "Commute quartile (shortest to longest)",
+      "Mean attendance rate (%)")
+ax.grid(False, axis="x")
+ax.set_ylim(0, 100)          # full scale: a truncated axis would invent a trend
+
+leg = ax.legend(frameon=False, loc="lower right", fontsize=9.5)
+for text in leg.get_texts():
+    text.set_color(SECONDARY)
+
+fig.tight_layout()
+plt.show()
+
+
+# --- 4. The extreme tail ---------------------------------------------
+header("THE LONGEST COMMUTERS")
+far = df[df["commute_minutes"] >= 60]
+print(f"Students commuting 60+ minutes: n = {len(far)}")
+print(f"  their mean attendance: {far['attendance_rate'].mean():.2f}%")
+print(f"  class mean attendance: {df['attendance_rate'].mean():.2f}%")
+print(f"  standard error on a group this small: "
+      f"{df['attendance_rate'].std() / np.sqrt(len(far)):.2f} points")
+print("\nThe gap is within the noise you expect from a group of this size,")
+print("so it is not evidence of a real effect.")
+display(far[["student_id", "commute_minutes", "attendance_rate",
+             "study_hours_per_week", "exam_score"]]
+        .sort_values("commute_minutes", ascending=False))

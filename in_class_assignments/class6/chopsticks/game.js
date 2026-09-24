@@ -72,7 +72,8 @@ const Game = (() => {
    * ------------------------------------------------------------------ */
 
   /**
-   * Every legal move from `state`, as descriptors the UI can animate:
+   * Every legal move from `state` - the JavaScript counterpart of the
+   * Python `next_moves()` - as descriptors the UI can animate:
    *
    *   { type: "attack", actor, from, to, state }
    *   { type: "split",  actor, from, to, amount, state }
@@ -82,7 +83,7 @@ const Game = (() => {
    * moves that land on the same position are collapsed into one, so the move
    * count always matches the number of distinct positions reachable.
    */
-  function legalMoves(state) {
+  function nextMoves(state) {
     if (isTerminal(state)) return [];
 
     const mover = turn(state);
@@ -140,7 +141,7 @@ const Game = (() => {
 
   /** Find the legal move that attacks opponent hand `to` using own hand `from`. */
   function findAttack(state, from, to) {
-    return legalMoves(state).find((m) => m.type === "attack" && m.from === from && m.to === to) || null;
+    return nextMoves(state).find((m) => m.type === "attack" && m.from === from && m.to === to) || null;
   }
 
   /**
@@ -152,7 +153,7 @@ const Game = (() => {
     const mover = turn(state);
     const mine = mover === "A" ? state.a : state.b;
 
-    const options = legalMoves(state)
+    const options = nextMoves(state)
       .filter((m) => m.type === "split")
       .map((m) => {
         const next = mover === "A" ? m.state.a : m.state.b;
@@ -191,7 +192,8 @@ const Game = (() => {
     isOut,
     isTerminal,
     outcome,
-    legalMoves,
+    nextMoves,
+    legalMoves: nextMoves,   // alias, kept so older call sites still read
     applyMove,
     findAttack,
     splitOptions,

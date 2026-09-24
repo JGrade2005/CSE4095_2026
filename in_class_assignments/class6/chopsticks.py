@@ -135,15 +135,26 @@ def best_move_dp(depth):
                     else:
                         d[((i, j), (k, l), depth)] = (0, [])
                         
-    for h in range(depth -1, -1, -1):
-        # fill in code below
-
-        pass
-
-
-
-
-
+    for h in range(depth - 1, -1, -1):
+        for i in range(0, 5):
+            for j in range(0, 5):
+                for k in range(0, 5):
+                    for l in range(0, 5):
+                        w = ((i, j), (k, l), h)
+                        # a finished game keeps its result and has no move to make
+                        if i == 0 and j == 0 and k == 0 and l == 0:
+                            d[w] = (0, [])
+                        elif i == 0 and j == 0:
+                            d[w] = (-1, [])
+                        elif k == 0 and l == 0:
+                            d[w] = (1, [])
+                        else:
+                            # every next move sits at level h + 1, already filled in
+                            options = [(d[v][0], v) for v in next_moves(w)]
+                            # even level is A's turn, so A takes the largest result,
+                            # odd level is B's turn, so B takes the smallest
+                            pick = max if h % 2 == 0 else min
+                            d[w] = pick(options, key=lambda option: option[0])
 
     return d
 

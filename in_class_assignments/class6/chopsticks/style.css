@@ -418,6 +418,41 @@ kbd {
 
 .choice-note { display: block; font-size: 11px; color: var(--dim); }
 
+/* Game length. `accent-color` tints the native track and thumb, which keeps
+   this to three rules instead of a pile of vendor pseudo-elements. */
+.length {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 6px;
+}
+
+.length input[type="range"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 22px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.length input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+.length-read {
+  font-family: var(--display);
+  font-size: 19px;
+  font-weight: 600;
+  min-width: 5.5em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.length-note {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--dim);
+  margin: 0 0 20px;
+  max-width: 62ch;
+}
+
 .sheet-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 
 .verdict {

@@ -1,0 +1,15 @@
+{
+  "id": "session-1789681212936",
+  "startedAt": "2026-09-17T21:40:12.936Z",
+  "cwd": "/home/ajgre/CSE4095_2026/in_class_assignments/class6",
+  "context": {},
+  "metrics": {
+    "edits": 7,
+    "commands": 0,
+    "tasks": 0,
+    "errors": 0
+  },
+  "restoredAt": "2026-09-18T15:10:52.060Z",
+  "endedAt": "2026-09-18T15:11:14.374Z",
+  "duration": 63061439
+}

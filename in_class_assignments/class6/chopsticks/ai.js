@@ -81,7 +81,7 @@ const AI = (() => {
               }
 
               let best = null;
-              for (const move of Game.legalMoves(state)) {
+              for (const move of Game.nextMoves(state)) {
                 const value = table.get(Game.key(move.state)).value;
                 const better = best === null ||
                   (maximizing ? value > best.value : value < best.value);
@@ -118,7 +118,7 @@ const AI = (() => {
     const maximizing = mover === "A";
     const entry = table.get(Game.key(state));
 
-    const moves = Game.legalMoves(state).map((move) => ({
+    const moves = Game.nextMoves(state).map((move) => ({
       move,
       value: valueOf(table, move.state),
       label: Game.describe(move),
@@ -149,7 +149,7 @@ const AI = (() => {
    * misses wins without throwing the game. Perfect always follows the table.
    */
   function chooseMove(table, state, difficulty) {
-    const moves = Game.legalMoves(state);
+    const moves = Game.nextMoves(state);
     if (moves.length === 0) return null;
 
     const entry = table.get(Game.key(state));

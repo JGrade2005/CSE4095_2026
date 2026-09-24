@@ -52,4 +52,10 @@ From this graph, I notice that there is a general positive correlation between s
 
 From this graph, I notice that hours slept each night shows basically no correlation with exam score. Some students that have very little sleep, score similarly to those that sleep a lot each night.
 
+PART 6: 
+
+Prediction: I expect that qui scores to be associated with exam scores because typically, quizzes cover all of the material that is to be on quizzes, so the better a student scores on quizzes, the better they know the information that will be on the exams
+
+It turns out, that quiz score is the best predictor for exam score. The quiz average vs exam average has the tightest spread and correlation. Therefore usually as quiz exam scores improve, so do exam scores. There's of course, always outliers, but the deviation is only 6.61 points on average. The pearson r value, which is the strength of the correlation, is 7.68. This is a large positive correlation.
+
 

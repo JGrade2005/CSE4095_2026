@@ -1,204 +1,197 @@
 # Vibe log
 
-A record of how this was built with Claude (Opus 5) in Claude Code, including the
-decisions that mattered and the places the first answer was wrong.
-
-Session date: 2026-09-17
+Five interactions with Claude (Opus 5, in Claude Code) that shaped this project.
+Two of them are debugging and verification rather than code generation.
 
 ---
 
-## 1. Understanding the problem before writing anything
+## Interaction 1 — Understanding minimax on a cyclic game
 
-Started by asking for an explanation of chopsticks and a demo, specifically to
-check that the dynamic programming angle was understood before committing to an
-approach.
+**Prompt:**
+Before asking for any code, I asked for the chopsticks problem to be explained
+back to me along with a small working demo, specifically to check the dynamic
+programming angle was understood. I said the challenge was "keeping track of the
+states, and also to lessen the work load through caching."
 
-The useful thing that came out of this: **the position graph is cyclic.** Two
-players can shuffle fingers back and forth forever, so the game is not a DAG and
-the textbook "wrap the recursion in a memo" pattern silently breaks — `memo[s]`
-is assigned *after* the recursive call, so a cycle re-enters `s` before it is
-ever cached and the stack dies. This was demonstrated concretely with a
-`RecursionError`, not just asserted.
-
-Two valid fixes exist:
+**AI suggestion:**
+It said the caching framing was hiding the real problem: **the position graph of
+chopsticks is cyclic.** Two players can shuffle fingers back and forth forever,
+so it is not a DAG, and the textbook "wrap the recursion in a memo" pattern
+silently breaks — `memo[state]` is assigned *after* the recursive call, so a cycle
+re-enters a position before it has ever been cached and the stack dies. It
+demonstrated this with an actual `RecursionError` rather than just asserting it,
+and offered two fixes:
 
 | Approach | How it handles the cycle |
 | --- | --- |
-| Retrograde analysis | Walk backward from terminal positions over reverse edges, counting unresolved children. Yields WIN/LOSS/**DRAW** and needs no depth limit. |
-| Depth-limited table | Make the level part of the key. Level `h` only points at `h + 1`, so the graph is acyclic by construction. |
+| Retrograde analysis | Walk backward from terminal positions over reverse edges, counting unresolved children. Yields WIN / LOSS / **DRAW**, no depth limit needed. |
+| Depth-limited table | Put the level in the key. Level `h` only points at `h + 1`, so the graph is acyclic by construction. |
 
-A throwaway solver was written using the first approach (sorted hands, backward
-induction) purely as an independent oracle. It found **191 reachable positions**
-and reported that the first player loses in exactly **26 plies**. That number
-became the yardstick for everything after.
+**What I accepted or changed:**
+I accepted the diagnosis and took the depth-limited table, because that is what
+the supplied `chopsticks.py` already does by keying on `((i,j),(k,l),level)`. I
+also had it write the retrograde solver as a throwaway — not to use, but as an
+independent oracle to check the real implementation against later.
 
-## 2. Rules ambiguity, caught early
+**What I learned / how I verified it:**
+That "add a cache" and "make the recursion terminate" are different problems, and
+that the level in the Python's key is not bookkeeping — it is the thing that
+makes the whole approach valid. The throwaway solver found 191 reachable
+positions and reported the first player loses in exactly **26 plies**. That
+number became the yardstick for everything afterwards.
 
-Before writing real code, the rule variants were swept to see whether the answer
-was even stable. It is not:
+---
 
-| Split rule (cutoff at 5) | Value for player 1 |
-| --- | --- |
-| A split may kill your own live hand, e.g. `(1,1) → (0,2)` | **LOSS in 26** |
-| Self-killing splits banned | **DRAW** |
+## Interaction 2 — Filling in `best_move_dp`
 
-One rule flips the game from solved-loss to drawn. Worth knowing before building
-on top of it. Chose "any redistribution", which is what the provided starter code
-implements.
+**Prompt:**
+I gave it the starter `chopsticks.py` with the empty loop body and said to
+implement `best_move_dp` and not change any other code.
 
-## 3. Filling in `best_move_dp`
-
-The provided `chopsticks.py` already made the depth-limited choice by putting the
-level in the key, so the missing loop was a plain bottom-up sweep. The whole of
-minimax in that loop is one line:
+**AI suggestion:**
+A bottom-up sweep over all 625 hand combinations at each level, with the whole of
+minimax expressed as the parity of the level:
 
 ```python
 pick = max if h % 2 == 0 else min
 d[w] = pick(options, key=lambda option: option[0])
 ```
 
-Two details that were easy to get wrong:
+It flagged two details I would have got wrong. First, the **terminal check has to
+repeat at every level**, not just the base — a game can end before the horizon,
+and those positions are still looked up as children by the level above. Second,
+`key=lambda option: option[0]` compares **only the result**; without the key a tie
+falls through to comparing the state tuples, which does not crash but silently
+picks moves by the numeric order of finger counts.
 
-- The **terminal check has to repeat at every level**, not just the base. A game
-  can end before the horizon, and those positions are still looked up as children
-  by the level above.
-- `key=lambda option: option[0]` compares **only the result**. Without the key, a
-  tie falls through to comparing the state tuples, which does not crash but picks
-  moves by the numeric order of finger counts — meaningless.
+**What I accepted or changed:**
+Accepted as written. I kept it to the loop body only, as the assignment requires.
 
-Verified: 13,125 entries at depth 20, zero malformed, and the root value flips
-tie → loss between depth 24 and 26, matching the independent solver's 26 exactly.
-Two unrelated implementations landing on the same threshold is the real evidence.
+**What I learned / how I verified it:**
+The tie-breaking point is the kind of bug that never announces itself — the code
+runs, the AI plays, and the moves are just subtly arbitrary. Verified by checking
+the table had 13,125 entries at depth 20 with zero malformed entries, and that
+the root value flips tie → loss between depth 24 and 26 — matching the
+independent solver's 26 exactly. Two unrelated implementations landing on the
+same threshold is the real evidence, not the fact that it ran.
 
-### A false alarm worth recording
+---
 
-While watching a scripted game, it looked like both players were moving Player
-A's hands on consecutive plies, which would have been a turn-parity bug. It was
-not. At odd levels B *attacks*, which changes A's hands, and at even levels A can
-*split*, which also changes A's hands. Instrumenting the level counter showed the
-parity was correct all along. Lesson: instrument before believing a read of the
-output.
+## Interaction 3 — Verifying the JavaScript port against the Python *(verification)*
 
-## 4. Choosing a look
+**Prompt:**
+After porting the rules to `game.js` and `ai.js`, I asked it to check the port
+rather than assume it was right.
 
-The web version started from a hand sketch: first person across a table, own
-fists in the foreground, opponent's hands mid-distance, head on the horizon.
-
-Rejected **three.js** for this. The camera is fixed, so real 3D buys nothing that
-scale, stroke weight and arc'd motion paths do not, and procedural hand meshes
-look worse than clean line art. Everything is one SVG in a single `1000×720`
-viewBox, which is also why the arms always meet the wrists exactly as the hands
-drift — no CSS/SVG coordinate mismatch to reconcile.
-
-Three treatments were built and previewed live before picking: Ink (the sketch,
-faithfully), Plate (vintage anatomical engraving), Blueprint (cyanotype technical
-linework). **Plate** was chosen.
-
-## 5. Interaction decisions
-
-- **Attack** is drag-driven, as specified: pick a hand with the arrow keys, press
-  Enter, then drag onto an opponent hand.
-- **Redistribute** is an arrow-key scrub. Enter puts the hand "up", then ← and →
-  slide through every legal arrangement — `3–1`, `2–2`, `1–3` — previewed live on
-  the sprites themselves, with Enter to commit. Chosen over drag because every legal
-  option is reachable in one gesture and it stays consistent with the keyboard
-  selection already in use.
-- **Split animation** was revised mid-build. The first version had fingers
-  detaching and tumbling across the gap, which was fun but not what was wanted.
-  Replaced with the hands clapping together and the fingers going up or down at
-  the point of contact.
-- **AI delay** of 700–1400 ms with a "thinking" indicator. The table is already
-  built, so the pause is pure theatre — but without it the computer snaps and
-  reads as scripted rather than deliberating.
-
-## 6. Porting the rules to JavaScript
-
-The port was **not** assumed correct. All 1,250 `(hands, level)` combinations
-were run through both the Python `next_moves` and the JavaScript `legalMoves`,
-and the resulting position sets compared:
+**AI suggestion:**
+Rather than spot-checking a few positions, it proposed exhausting the space: run
+all 1,250 reachable `(hands, level)` combinations through both the Python
+`next_moves()` and the JavaScript `nextMoves()` and compare the resulting position
+sets.
 
 ```
 positions compared: 1250
 mismatches: 0
 ```
 
-Table values were checked the same way, against both the Python and the original
-independent solver: tie at depth 20 and 24, loss at depth 26, in all three.
+**What I accepted or changed:**
+Accepted. I also had it check table *values* rather than chosen moves, because
+two correct minimax implementations can legitimately select different moves among
+equally-valued options — values are the canonical thing to compare.
 
-One near-miss during this: the first test run "failed" three move-count
-assertions. The assertions were wrong, not the code — the expected numbers had
-been taken from the *canonical* solver, which sorts hands and therefore collapses
-`(1,2)` and `(2,1)` into one position, while the starter keeps left and right
-distinct. Comparing against the right baseline is the whole job.
+**What I learned / how I verified it:**
+The most useful moment was a **failure that was wrong**. The first run reported
+three failed assertions on move counts. The code was fine; my expected numbers
+had been taken from the earlier *canonical* solver, which sorts each player's
+hands and so treats `(1,2)` and `(2,1)` as the same position, while the supplied
+Python keeps left and right distinct. The assertions were measured against the
+wrong baseline.
 
-## 7. Performance note
-
-Building the table allocates a move descriptor object per edge, roughly 100k
-objects at depth 26. Move labels are therefore generated **on demand** via
-`Game.describe(move)` rather than stored on every descriptor — that one change
-avoids ~100k string allocations during table construction and keeps the build
-around 35 ms.
-
-## 8. The art pass
-
-The procedurally wobbled line-art hands were replaced with pixel sprites built
-from a reference image, and the stage was turned into a dark room lit by a single
-torch that follows whatever is in play.
-
-Two things came out of actually rendering the sprites and looking at them, rather
-than assuming they were fine:
-
-- **The fingers were too thin.** The outline band is the darkest colour in the
-  ramp, which against a near-black room is invisible — so every finger silently
-  lost a pixel off each edge and read as a spike. Fixed by fattening the finger
-  radii from ~2.0 to ~2.5 and narrowing the outline band from 0.9 to 0.65.
-- **Curled fingers read as short raised ones.** The knuckle bumps stood too proud
-  of the fist. Dropped them from 2.6 to 1.6 pixels.
-
-Lighting is a palette swap, not a filter: each pose is baked in `lit`, `dim` and
-`dead` ramps, so switching which hand is lit costs one `href` change rather than a
-per-frame SVG filter. Sprites are only swapped when the pose or the lighting
-actually changes, tracked by a short signature string.
-
-Scale was chosen so both depths are whole-number multiples of the sprite grid —
-4x near, 2x far. Any other ratio gives uneven pixel sizes and the art stops
-reading as pixel art.
-
-## 9. Two ways to play the same turn
-
-Dragging was replaced with carrying: once a hand is picked up it follows the
-cursor outright, and because the arm path is drawn from a fixed root to the live
-wrist position, the arm stretches out to wherever the hand has gone for free. The
-real cursor is hidden while carrying, so the hand *is* the pointer.
-
-Adding keyboard attacks meant ← → had to mean two different things, since they
-already scrubbed splits. Resolved spatially rather than with a mode key: the
-computer's hands are literally up the screen, so ↑ reaches across the table and ↓
-comes back, and ← → then means "pick a target" or "slide fingers" depending on
-which side of the table you are on.
-
-Pointer and keyboard would otherwise fight over where the hand is, so a
-`inputMode` flag tracks whichever was used last and that one wins. Moving the
-mouse cancels an aim; pressing ↑ drops the cursor.
-
-Two details worth recording:
-
-- **The attack animation had to stop assuming it started from home.** It tweened
-  `ox` from 0, which was fine when the hand never left its mark, but now the hand
-  may already be most of the way across. It captures its current offset instead,
-  and flattens the arc as there is less ground left to cover.
-- **`pointerdown` cannot require a prior `pointermove`.** A first click, and every
-  touch, arrives with no move before it. The handler picks the hand up itself
-  rather than assuming the pointer path already ran.
+That is the lesson I took from the whole project: a failing test is a claim about
+two things, and the baseline deserves as much suspicion as the code. I would have
+"fixed" working code if I had trusted the red output.
 
 ---
 
-## What I would revisit
+## Interaction 4 — Debugging a freeze that forced a tab reload *(debugging)*
 
-- **No distance tie-breaking.** When every move loses, the computer picks an
-  arbitrary one, so it can walk into the fastest loss instead of stalling. Not a
-  correctness bug — a win inside the horizon is still guaranteed — but preferring
-  the fastest win and the slowest loss would make it look sharper.
-- The interaction and animation code lives inline in `index.html` to match the
-  required file structure. If a `ui.js` were permitted, splitting it out would be
-  cleaner than a single large `<script>` block.
+**Prompt:**
+"The player can sometimes have issues clicking the opponent and has to reload
+tab. Can you make all of the interactions work smoother?" — a vague symptom, with
+no reproduction steps.
+
+**AI suggestion:**
+It refused to guess and read the actual code paths, then found **four** separate
+causes rather than one:
+
+1. **The freeze.** `playMove` was `async` with no error handling, so any throw
+   inside an animation left `ui.phase` on `"animating"` forever. Every handler
+   early-returns on the phase, so the game went permanently dead.
+2. **Missed clicks.** The hit test required the cursor within 130 units of a hand
+   centre that was itself drifting, so a near miss was a dead click with no
+   feedback at all.
+3. **Stutter.** The frame loop did eight `querySelector` calls *and* a full
+   `innerHTML` re-parse of the arms, sixty times a second. Stutter reads as a
+   dropped click.
+4. **A misleading HUD.** `syncHud` derived whose turn it was from the game state,
+   but the state is committed at the moment of *impact*, with half a second of
+   animation still to run — so the HUD flipped to "Turn: You" mid-swing and
+   anything pressed then went into a phase that ignores input.
+
+**What I accepted or changed:**
+Accepted all four fixes. I pushed back on the first one being enough on its own —
+a `try/catch` cannot catch a promise that simply never settles — so it added a
+global error handler *and* an eight-second watchdog, rate-limited so recovery
+cannot loop, plus a sequence number so a late-resolving animation cannot advance
+the turn twice.
+
+**What I learned / how I verified it:**
+Cause 4 was only found by **driving the real page**, not by reading it. It
+installed jsdom, loaded the actual `index.html`, and played whole games through
+all three input paths. Then it wrote a second test that deliberately sabotages an
+animation frame so its promise never settles — reproducing my exact freeze — and
+asserted recovery:
+
+```
+sabotaged the attack animation; watching for recovery...
+RECOVERED after ~1s — the game is playable again, no reload needed.
+```
+
+Writing those tests also caught a bug reading had missed: `hidden` is an
+`HTMLElement` property, so setting it on an SVG `<text>` node silently does
+nothing and the "thinking" indicator would never have appeared.
+
+---
+
+## Interaction 5 — Making the horizon configurable
+
+**Prompt:**
+"Add configurable number of moves. Right now it's at 26, can you make it ~40 by
+default, and have it be adjustable."
+
+**AI suggestion:**
+Before writing the control, it built the table at every depth in the range and
+read the root value, instead of assuming the earlier 26-ply result still held:
+
+```
+depth 10–24 : root  0  (tie)
+depth 26–60 : root -1  (A loses)
+```
+
+It then argued the setting was worth *explaining* rather than just exposing,
+because the horizon does not merely limit the game — it decides it. The slider
+note now tells you which side of the line you picked.
+
+**What I accepted or changed:**
+Accepted, and kept its two catches. The table had been cached with
+`if (!ui.table)`, so it would have been built once at the first depth and reused
+at every other one, silently wrong values for the rest of the session. And the
+depth has to stay even or the two players get a different number of turns, so the
+slider steps by two *and* the handler rounds, since a programmatic odd value
+would otherwise slip through.
+
+**What I learned / how I verified it:**
+That the horizon effect is a real, demonstrable thing rather than a textbook
+aside. The same opening position is a draw or a forced loss depending only on how
+far ahead you are allowed to look, and the changeover is exactly 26 because B's
+forced win takes exactly 26 plies. 
