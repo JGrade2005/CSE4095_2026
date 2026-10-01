@@ -20,3 +20,8 @@ Also read `~/agenticlibrary/context.md` for general work practices.
 
 - Run with `.venv/bin/python` (pandas, numpy, matplotlib, scikit-learn, ipykernel, nbclient). Execute with nbclient.
 - Read the CSV with `keep_default_na=False, na_values=[""]`. The default turns the valid category "None" in `prior_programming_experience` into NaN.
+
+## Answer guide
+
+- `answerGuide.md` holds talking points and evidence for every Part's questions (same style as `class8/QUESTION_GUIDE.md`). Add a section for each new Part. The notebook's "**My answer:**" placeholders stay empty.
+- Each Part replaces the matching starter section (`## N. ...` plus its TODO cell) when there is one.
