@@ -50,3 +50,22 @@ Key ideas and evidence for every question in `CSE4095_Class10_Starter.ipynb`.
 - Numerical (5): `study_hours_per_week`, `sleep_hours_per_night`, `attendance_rate`, `practice_problems_per_week`, `commute_minutes`. Their dtypes are `float64` or `int64`.
 - Categorical (2): `prior_programming_experience` (None / Some / Strong) and `study_group` (Yes / No). Their dtype is `str` (text).
 - `prior_programming_experience` actually has an order (None < Some < Strong), so it's *ordinal*. It's still treated as categorical here, so it gets one-hot encoded instead of being turned into made-up numbers like 0, 1, 2.
+
+---
+
+## Part 3: Train/Test Split
+
+**Evidence from the notebook:** train = 200 students (121 No, 79 Yes), test = 50 students (30 No, 20 Yes). Yes is 39.6% overall, 39.5% in train, 40.0% in test, so stratification worked.
+
+**1. Why are we holding the test set aside?**
+- The test set stands in for **future, unseen students**. Its score estimates how the model will do in the real world.
+- That estimate is only honest if the model, and every decision about the model, never saw those 50 students. Once they influence a choice, they stop being "unseen".
+- Training data is for learning (fitting the model, imputer, scaler). Cross-validation on the training data is for comparing and choosing. The test set is for **one final check** at the end (Part 15).
+- Analogy: the test set is the final exam. You can practise as much as you like on practice problems (training/CV), but if you see the exam questions in advance, your grade no longer shows what you actually know.
+
+**2. What could happen if we repeatedly check test accuracy while modifying our model?**
+- Each time you look at the test score and change something in response, information about the test set leaks into your choices. You end up **tuning the model to those 50 specific students** (overfitting to the test set).
+- The final test score becomes **too optimistic**. It reflects how well you fitted these 50 students, not how well the model works on new ones, so performance on real new students is likely to be worse.
+- You also lose your only unbiased measurement. There is no clean data left to check the model honestly.
+- Why it's easy to fool yourself here: with 50 test students, **one student = 2 percentage points** of accuracy. Small, random differences can look like real improvements, and if you keep trying changes, one of them will "win" by luck.
+- Fix: compare and tune with cross-validation on the training set (the shared `cv` folds), then evaluate on the test set once.
