@@ -30,3 +30,23 @@ Key ideas and evidence for every question in `CSE4095_Class10_Starter.ipynb`.
   - Accuracy alone can hide a weak model, so recall and F1 for the "Yes" class are worth reporting too.
   - It is the reason for stratifying: `StratifiedKFold` and a stratified train/test split keep about 40% Yes in every fold and split, so each model is scored on the same mix.
 - Extra detail if you want it: no student scored exactly 80, but 33 students scored between 78 and 82. Those students sit right next to the cutoff, so they will be the hardest to classify.
+
+---
+
+## Part 2: Define X and y
+
+**1. Why would using `exam_score` be target leakage?**
+- **Leakage definition:** target leakage means a feature gives the model information about the answer that it would not have at prediction time.
+- **The label is built from it.** `high_exam_score` is literally `exam_score >= 80` (Part 1). Giving the model `exam_score` hands it the answer. It only has to learn "is this number at least 80?", which is right for all 250 students.
+- **It doesn't exist yet when you predict.** The point is to predict from habits *before* the exam. If you already had the exam score, you wouldn't need a model.
+- **Results would look perfect but be fake.** Accuracy would be about 100% in cross-validation, and it would tell you nothing about how habits relate to high scores. In class 8, adding `exam_score` gave 100% on every metric, and its coefficient (4.62) swamped the biggest habit (0.23).
+- A strong answer names all three ideas: built from the target, not available at prediction time, misleadingly perfect scores.
+
+**Context for the other excluded columns (not asked, but useful if it comes up):**
+- `student_id`: an arbitrary label, unique per student. A model could memorize individuals, which doesn't help with new students.
+- `quiz_average`: measured during the course, so it may not be known at prediction time, and it measures the same skill as the exam (r = 0.77 with `exam_score`). It's a borderline case rather than pure leakage, which is why it's left out of the main model.
+
+**About the feature types (from `X.dtypes`):**
+- Numerical (5): `study_hours_per_week`, `sleep_hours_per_night`, `attendance_rate`, `practice_problems_per_week`, `commute_minutes`. Their dtypes are `float64` or `int64`.
+- Categorical (2): `prior_programming_experience` (None / Some / Strong) and `study_group` (Yes / No). Their dtype is `str` (text).
+- `prior_programming_experience` actually has an order (None < Some < Strong), so it's *ordinal*. It's still treated as categorical here, so it gets one-hot encoded instead of being turned into made-up numbers like 0, 1, 2.
