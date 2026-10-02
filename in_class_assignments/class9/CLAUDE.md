@@ -21,3 +21,12 @@ Also read `~/agenticlibrary/context.md` for general work practices.
 
 - Run with `../class10/.venv/bin/python` (pandas, numpy, matplotlib, scikit-learn, ipykernel, nbclient). Execute with nbclient.
 - Read the CSV with `keep_default_na=False, na_values=[""]`. The default turns the valid category "None" in `prior_programming_experience` into NaN.
+
+## Answer guide
+
+- `answerGuide.md` holds talking points and evidence for every Part's questions (same style as `class10/answerGuide.md`). Add a section for each new Part. The notebook's "**My answer:**" placeholders stay empty.
+
+## Notebook layout
+
+- Title, Setup, then Parts in order. Starter sections (`## N. ...` plus TODO cell) that a Part covers are removed. Uncovered ones stay below the Parts.
+- `numeric_features` / `categorical_features` are defined at the start of Part 4 (5 numeric incl. commute_minutes, 2 categorical). student_id, quiz_average, exam_score are not features.
