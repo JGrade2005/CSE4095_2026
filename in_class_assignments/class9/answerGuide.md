@@ -298,6 +298,10 @@ No numbered questions. Fill in the two case templates. Candidate rows and what t
 
 **Row 69:** actual 75.5, predicted 60.7, residual +14.8. Low attendance (64.3%) and few study hours (4.6), but scored near average.
 
+**Extra evidence for the two strongest cases (not shown in the notebook):**
+- Row 173 (S174): 17.8 hours is more than any training student (training max 16.2). Only 11 training students study over 12 hours, and they average 83.5. The 10 training students with 0 practice problems average 72.2 (overall 77.7). Quiz average 78.3, middle of the class (53rd percentile).
+- Row 108 (S109): quiz average 94.1 (93rd percentile). Only 1 of the 70 training students with no prior experience scored 95+. 25 practice problems is above the median (16).
+
 **Feature means (top 10 errors vs. whole test set):** study hours 7.97 vs 6.74 (pulled up by row 173), practice problems 11.5 vs 15.6, sleep 6.71 vs 7.16. Attendance and commute are almost the same. Only 10 students, so treat this as a description, not a finding.
 
 **For the reminder:** a hypothesis about one student is a guess at a reason. Single cases can't prove cause, and the data don't record things like motivation or test-day conditions.
