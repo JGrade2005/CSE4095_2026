@@ -19,7 +19,7 @@ Also read `~/agenticlibrary/context.md` for general work practices.
 
 ## Environment and data notes
 
-- Run with `../class10/.venv/bin/python` (pandas, numpy, matplotlib, scikit-learn, ipykernel, nbclient). Execute with nbclient.
+- Run with `../class10/.venv/bin/python` (pandas, numpy, matplotlib, scikit-learn, ipykernel, nbclient, nbconvert). Final check: `../class10/.venv/bin/jupyter nbconvert --to notebook --execute --inplace CSE4095_Class3_Starter.ipynb`.
 - Read the CSV with `keep_default_na=False, na_values=[""]`. The default turns the valid category "None" in `prior_programming_experience` into NaN.
 
 ## Answer guide
@@ -29,4 +29,4 @@ Also read `~/agenticlibrary/context.md` for general work practices.
 ## Notebook layout
 
 - Title, Setup, then Parts in order. Starter sections (`## N. ...` plus TODO cell) that a Part covers are removed. Uncovered ones stay below the Parts.
-- `numeric_features` / `categorical_features` are defined at the start of Part 4 (5 numeric incl. commute_minutes, 2 categorical). student_id, quiz_average, exam_score are not features.
+- Part 4 defines `base_features` (7 columns, exact user list) and splits them by dtype into `numeric_features` (5) and `categorical_features` (2). student_id, exam_score, quiz_average are excluded. quiz_average is tested in Part 14.
