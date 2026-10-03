@@ -459,3 +459,17 @@ No numbered questions. Fill in the two case templates. Candidate rows and what t
 - **Hypothesis supported:** yes, exactly as predicted.
 - **So why scale at all for Linear Regression?** Scaled coefficients are comparable (all "per 1 std"). Unscaled, commute's 0.029 looks tiny only because a minute is a small unit. Scaling also matters for regularized models (Ridge, Lasso), which plain LinearRegression isn't.
 - This was a planned experiment (hypothesis written first, run once), not tweaking to improve the test score, so it follows the project rules.
+
+---
+
+## Part 18: AI Reflection
+
+This is your personal reflection, so there are no talking points to copy. Moments from this project you could draw on:
+
+- **CSV loading:** the AI loaded the data with `keep_default_na=False, na_values=[""]`. With default loading, pandas reads the real category "None" as missing (95 missing instead of 7). You can verify it with `df["prior_programming_experience"].value_counts(dropna=False)`.
+- **Wrong Part 4 prompt:** the first Part 4 prompt (from another assignment) referred to `numeric_features` "from Part 2", which didn't exist. The AI flagged the mismatch. You then supplied the correct prompt.
+- **A false premise:** Part 8, Q3 says original scores are whole numbers. The AI checked and found only 27 of 250 are.
+- **A note that didn't match the code:** the Part 13 instructions said one-hot coefficients are relative to a "dropped/reference category". The AI pointed out that the encoder drops no category and reworded the note.
+- **A truncated prompt:** the Parts 4 to 17 message was cut off at Part 9. The AI built only the fully specified Parts and asked for the rest instead of guessing.
+- **Your own checks:** comparing numbers in the guide against notebook outputs, the Part 16 demo (thresholds converting back exactly), and Part 17 (identical metrics) are all ways you verified claims instead of trusting them.
+- **Something to question:** "Random Forest has the higher R², so it's better". The Part 15 metrics disagree, and one student (row 173) drives most of the RMSE difference.
