@@ -362,3 +362,111 @@ Predictions identical for 200 of 200 rows. Training attendance mean is about 85.
 - Stability vs score: the trees have the lowest std (0.040), but the lowest scores of the three real models.
 - Simplicity and interpretability can be a tiebreaker when scores are close.
 - The choice must be based on CV only. The test set hasn't been used yet, and that's the point.
+
+---
+
+## Part 15: Final Test Evaluation
+
+**Evidence:**
+
+| | CV mean (Part 14) | Test result |
+|---|---|---|
+| Accuracy | 0.740 | 0.840 |
+| Precision | 0.728 | 0.875 |
+| Recall | 0.571 | 0.700 |
+
+Confusion matrix: TN 28, FP 2, FN 6, TP 14. Majority-class test accuracy: 0.600 (always "No", 30 of 50).
+
+**1. How does final test accuracy compare with mean CV accuracy?**
+- Test accuracy 0.840 is 0.100 **higher** than the CV mean of 0.740. That's 42 of 50 correct.
+- LR's CV std was 0.064, so the test score is about 1.5 std above the mean. Its fold scores ranged 0.650 to 0.850, and the test score falls inside that range.
+
+**2. Is it reasonably consistent with CV?**
+- Yes, reasonably. It's within the range CV showed was possible, and it is **not lower** than CV, which is what you'd worry about (a big drop would suggest overfitting or a leak).
+- Why it can come out higher:
+  - **Small test set:** 50 students, one student = 0.02. The test set may simply contain more "easy" students. At CV-level performance (0.74) the model would get 37 of 50 right. It got 42, so just 5 extra students explain the whole 0.10 gap.
+  - **More training data:** the final model trained on all 200 students, CV models on 160.
+- Cautious phrasing: "consistent with CV, at the optimistic end of the range". Don't claim the model is "really" 84% accurate. CV's 0.74 averaged over 200 held-out predictions is arguably the more stable estimate.
+- Context: this matches class 8 exactly (0.84 / 0.875 / 0.70, TN 28 FP 2 FN 6 TP 14). Same model, same features, same split, so the same result is expected.
+
+**3. Did the model outperform the majority-class baseline?**
+- Yes. 0.840 vs 0.600, a gain of 0.24 (12 more students correct out of 50).
+- The baseline finds 0 of the 20 high scorers (recall 0). The model finds 14 of 20.
+
+**4. Are precision and recall similar to the CV results?**
+- Both are higher on the test set: precision 0.875 vs 0.728, recall 0.700 vs 0.571.
+- The **pattern** is the same as CV: precision is higher than recall. When the model says "Yes" it's usually right (14 of 16), but it still misses high scorers (6 of 20). It's cautious about predicting "Yes".
+- Precision on the test set rests on only 16 "Yes" predictions, so one more wrong "Yes" would drop it to 0.824. Small counts move these numbers a lot.
+
+---
+
+## Part 16: Analyze the Final Errors
+
+**Evidence (all 8 mistakes, with the model's probability of "Yes"):**
+
+| Student | Actual | Predicted | P(Yes) | exam_score |
+|---|---|---|---|---|
+| S133 | No | Yes | 0.501 | 66.8 |
+| S170 | No | Yes | 0.541 | 79.6 |
+| S114 | Yes | No | 0.469 | 88.6 |
+| S081 | Yes | No | 0.496 | 87.9 |
+| S141 | Yes | No | 0.484 | 85.0 |
+| S038 | Yes | No | 0.338 | 80.1 |
+| S090 | Yes | No | 0.299 | 82.0 |
+| S100 | Yes | No | 0.331 | 85.8 |
+
+P(Yes) isn't in the notebook (it comes from `final_model.predict_proba`), but it's useful evidence.
+
+Group means (from `group_means`):
+
+| | False positives | False negatives | Correct |
+|---|---|---|---|
+| study_hours_per_week | 9.55 | 7.30 | 7.86 |
+| sleep_hours_per_night | 6.60 | 6.85 | 6.89 |
+| attendance_rate | 95.60 | 82.22 | 85.91 |
+| practice_problems_per_week | 16.00 | 19.00 | 17.19 |
+| commute_minutes | 22.50 | 26.33 | 22.19 |
+
+**1. How many false positives occurred?** 2 (S133, S170). Predicted Yes, actually No.
+
+**2. How many false negatives occurred?** 6. Predicted No, actually Yes. Three times as many as false positives, matching the "precision higher than recall" pattern.
+
+**3. Do you notice any patterns among the mistakes?**
+- **False positives looked like high scorers on paper:** more study hours (9.55 vs 7.86 for correct predictions) and very high attendance (95.6% vs 85.9%). Their habits pointed to "Yes", but their scores didn't.
+- **False negatives looked like average students:** lower study hours (7.30) and lower attendance (82.2%) than the correct group. Their habits pointed to "No", but they scored 80+.
+- So the model's mistakes are students whose **habits didn't match their outcome**. That's what you'd expect from a model that predicts outcomes from habits.
+- **Most mistakes were close calls:** P(Yes) was between 0.30 and 0.54 for all 8. Five were between 0.47 and 0.54, a coin flip.
+- **Some sat right at the cutoff:** S170 scored 79.6 (0.4 below 80), S038 80.1, S090 82.0. Of the 4 test students who scored between 78 and 82, 3 were misclassified.
+- Caution: only 2 FPs and 6 FNs, so group means are based on tiny groups. One student can move a mean a lot. The test set also has blanks (study hours 3, sleep 1, prior experience 2), which the means skip.
+- Use non-causal language: "missed students tended to have lower attendance", not "low attendance caused the miss".
+
+**4. Are some observations likely more difficult to classify than others?**
+- Yes:
+  - **Students near the 80 cutoff.** A student at 79.6 and one at 80.1 are almost identical, yet get opposite labels. Small differences in habits can't reliably separate them.
+  - **Students whose habits don't match their result.** The features don't capture everything (test-day factors, prior knowledge, how well they study, not just how long). Those students will always be hard from habits alone.
+  - **Students with missing values.** Imputed values are guesses (medians), so the model has less real information about them.
+
+---
+
+## Part 19: Your Controlled Experiment (5-fold vs 10-fold CV)
+
+**A correction to your hypothesis (it's kept exactly as written in the notebook):**
+- It says "each fold will use 10% of the data for training, and 90% for testing". That's reversed. With 10 folds, each round **trains on 90%** (180 students) and **validates on 10%** (20 students). Your next sentence ("the models train on more data 90%") has it right. You may want to address this in your results answer.
+
+**Evidence:**
+
+| Model | 5-fold mean | 5-fold std | 10-fold mean | 10-fold std |
+|---|---|---|---|---|
+| Logistic Regression | 0.740 | 0.064 | 0.735 | 0.092 |
+| Decision Tree (depth 4) | 0.670 | 0.040 | 0.650 | 0.089 |
+| Random Forest | 0.690 | 0.072 | 0.670 | 0.100 |
+
+Training rows per fold: 160 (5-fold) vs 180 (10-fold). Validation rows: 40 vs 20.
+
+**Talking points for "Results and whether they support my hypothesis":**
+- **Higher accuracy: not supported.** 10-fold means are slightly *lower* for all three models (by 0.005 to 0.020). These differences are smaller than one std, so the fair conclusion is "about the same", not "10-fold is worse".
+- **More reliable estimate: not supported, at least not by the fold std.** The std went *up* for every model (0.064 → 0.092 for LR). Each 10-fold validation set has only 20 students, so one student = 0.05. Single folds are much noisier. LR's 10-fold scores range from 0.55 to 0.85.
+- **Subtle point (bonus):** a higher fold std doesn't automatically mean a worse estimate of the *mean*, because 10-fold averages over 10 scores instead of 5. The standard error (std / √folds) is nearly identical: LR 0.029 vs 0.029, RF 0.032 vs 0.032, Tree 0.018 vs 0.028. So 10-fold didn't make the mean more precise here either.
+- **Your bias reasoning is a real idea:** training on more data per fold (180 vs 160) makes each fold's model a little closer to the final model trained on all 200, so the estimate should be slightly less pessimistic. But 160 vs 180 is a small change, and that effect is too small to see under the noise here.
+- **Cost:** 10-fold trains each model 10 times instead of 5, double the computation for no visible benefit on this dataset.
+- **Controlled-experiment check:** only the number of folds changed. The same models, preprocessing, training data, `shuffle=True`, and `random_state=42` were used, and the test set wasn't touched. One limitation worth mentioning: each result comes from one particular shuffle (random_state=42). A different seed would give somewhat different numbers.
