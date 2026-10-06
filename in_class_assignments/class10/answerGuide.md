@@ -341,3 +341,24 @@ Predictions identical for 200 of 200 rows. Training attendance mean is about 85.
 **3. Why do Random Forests generally not require scaling?**
 - A Random Forest is a collection of decision trees that vote. Each tree is unaffected by scaling for the reason above, so the vote is too.
 - The randomness (bootstrap samples, random feature subsets) is about which rows and columns each tree sees, not the units of the values.
+
+---
+
+## Part 14: Compare the Tuned Tree Again
+
+**Evidence (`final_comparison`):**
+
+| Model | Mean CV Accuracy | Std. Accuracy | Mean Precision | Mean Recall |
+|---|---|---|---|---|
+| Majority baseline | 0.605 | 0.010 | 0.000 | 0.000 |
+| Logistic Regression | 0.740 | 0.064 | 0.728 | 0.571 |
+| Decision Tree (depth 4) | 0.670 | 0.040 | 0.598 | 0.493 |
+| Tuned Decision Tree (depth = 4) | 0.670 | 0.040 | 0.598 | 0.493 |
+| Random Forest | 0.690 | 0.072 | 0.642 | 0.518 |
+
+**Things to weigh for "the model I will carry forward is ___ because ___" (your decision):**
+- The tuned tree is identical to the depth-4 tree, because depth 4 was chosen. Tuning confirmed the original setting rather than improving it.
+- Compare means, spread, and every metric, as in Part 8: which model leads on accuracy, precision, and recall? How big is each lead compared with the std? Does one model win fold by fold (Part 8 guide)?
+- Stability vs score: the trees have the lowest std (0.040), but the lowest scores of the three real models.
+- Simplicity and interpretability can be a tiebreaker when scores are close.
+- The choice must be based on CV only. The test set hasn't been used yet, and that's the point.
