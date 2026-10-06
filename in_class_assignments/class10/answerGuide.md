@@ -470,3 +470,38 @@ Training rows per fold: 160 (5-fold) vs 180 (10-fold). Validation rows: 40 vs 20
 - **Your bias reasoning is a real idea:** training on more data per fold (180 vs 160) makes each fold's model a little closer to the final model trained on all 200, so the estimate should be slightly less pessimistic. But 160 vs 180 is a small change, and that effect is too small to see under the noise here.
 - **Cost:** 10-fold trains each model 10 times instead of 5, double the computation for no visible benefit on this dataset.
 - **Controlled-experiment check:** only the number of folds changed. The same models, preprocessing, training data, `shuffle=True`, and `random_state=42` were used, and the test set wasn't touched. One limitation worth mentioning: each result comes from one particular shuffle (random_state=42). A different seed would give somewhat different numbers.
+
+---
+
+## Part 20: AI Reflection
+
+These are your answers to write. Below are moments from this project you could draw on (pick what's true for you):
+
+**What you asked / what the AI recommended**
+- You set ground rules up front (test set locked until "Part 15", one shared `cv`, `random_state=42`, no GridSearchCV, no extra models) and saved them in `CLAUDE.md` so every step followed them.
+- You asked for each Part as a precise prompt (exact features, exact scorers, exact depths), plus chat explanations of Parts 5 to 19 and parameter vs hyperparameter.
+- The AI recommended reading the CSV with `keep_default_na=False` (otherwise "None" in prior experience becomes 88 fake missing values), and using `select_dtypes` to sort the features.
+
+**Accepting / verifying**
+- The notebook was executed top to bottom after every Part, and the charts were checked as images.
+- Cross-checks that matched: baseline 0.605 = 121/200 "No" in `y_train`. Fold 1's 0.625 matched its 37.5% Yes. The final test result (0.84 / 0.875 / 0.70) matched class 8, which used the same model and split.
+- Part 18 is itself a verification: the scaled thresholds converted back to exactly the raw ones, and 200 of 200 predictions matched.
+
+**Simplifying / modifying**
+- Your own decisions: depth 4 over the simpler depth 2 (Part 13), Logistic Regression as the final model (Part 14), and the 5 vs 10-fold experiment (Part 19).
+- The AI's Part 17 workflow diagrams were rebuilt from the prompt, not copied from the handout. Did you compare or change them?
+- The AI flagged mistakes in your writing for you to fix rather than editing them (leaf counts in Part 13, the reversed 10%/90% in the Part 19 hypothesis, "highest statistics" in Part 14).
+
+**Did the AI suggest using the test set?**
+- Things that actually happened in this project:
+  - When you asked to "complete Parts 9 to 18", the AI stopped before Part 15 and asked for an explicit "Part 15" and a real `final_model_name`, instead of testing a placeholder model.
+  - When asked for a "placeholder model name" and to continue, it left `final_model_name = None` and still didn't touch the test set.
+  - In Part 4 it ran a scaled vs unscaled check on training CV only, and kept the scores out of the guide so they wouldn't spoil later Parts.
+  - The only pre-Part-15 use of `y_test` was the Part 3 class-percentage check you asked for, which counts labels and doesn't evaluate any model.
+- Contrast with classes 8 and 9, where experiments and model rankings were judged on the test set. That's Workflow 1 from Part 17.
+
+**What you learned (possible themes)**
+- CV for choosing, test set once for confirming.
+- Training accuracy always rises with depth. The train/CV gap shows overfitting.
+- Small differences vs std: "similar", not "better".
+- More folds isn't automatically better (Part 19).
