@@ -209,3 +209,135 @@ Per-fold accuracy (not in the notebook, but useful):
 - In concrete terms: LR ranges from 0.650 to 0.850 depending on which 40 students are held out. That's a 20-point spread from one model.
 - Fold 3 is the "easy" fold for every model (LR 0.85, RF 0.80, Tree 0.725) and fold 2 is hard for all of them. So part of the variation comes from **which students** are in the fold, not just from the model.
 - That's why one train/validation split would be risky, and why small differences between means should be described cautiously.
+
+---
+
+## Part 9: Hyperparameters
+
+**In my own words (using max_depth as the example)**, talking points:
+- A **parameter** is learned by `fit()` from the training data. For a tree: which feature to split on, the cut-off value, and the prediction at each leaf. Example from this data: every tree's first question is "study_hours_per_week <= 5.05?". Nobody typed that in, the tree found it.
+- A **hyperparameter** is a setting you choose *before* training. It controls *how* the model learns. `max_depth` limits how many questions in a row the tree can ask. `fit()` never changes it.
+- Same data, different `max_depth`: depth 1 gives 2 leaves, depth 4 gives 12 leaves, no limit (None) grows to depth 11 with 44 leaves. The hyperparameter sets the size of the box, the parameters fill it.
+- Because `fit()` can't choose hyperparameters, you compare values with cross-validation (Parts 10 to 13), never with the test set.
+- Other examples in this notebook: `max_iter` (LR), `n_estimators` (RF) are hyperparameters. LR's coefficients are parameters.
+
+---
+
+## Part 10: Experiment with Decision-Tree Depth (no questions)
+
+| max_depth | Training Accuracy | CV Accuracy | CV Std | Gap (Train − CV) |
+|---|---|---|---|---|
+| 1 | 0.661 | 0.560 | 0.066 | 0.101 |
+| 2 | 0.712 | 0.625 | 0.057 | 0.088 |
+| 3 | 0.772 | 0.610 | 0.051 | 0.162 |
+| 4 | 0.826 | 0.670 | 0.040 | 0.156 |
+| 6 | 0.925 | 0.615 | 0.056 | 0.310 |
+| 8 | 0.979 | 0.620 | 0.043 | 0.359 |
+| None | 1.000 | 0.595 | 0.060 | 0.405 |
+
+Reference points: baseline CV accuracy 0.605. Logistic Regression 0.740, Random Forest 0.690 (Part 8).
+
+---
+
+## Part 11: Visualize Model Complexity
+
+**1. What happens to training accuracy as max_depth increases?**
+- It rises every single step: 0.661 → 0.712 → 0.772 → 0.826 → 0.925 → 0.979 → 1.000.
+- With no depth limit it reaches 100%: the tree memorizes every training student. Deeper trees can always carve out smaller groups, so training accuracy can only go up.
+
+**2. What happens to cross-validation accuracy?**
+- It does **not** follow training accuracy. It rises from 0.560 (depth 1) to a peak of 0.670 (depth 4), then falls back to 0.615 to 0.620 (depths 6 and 8) and 0.595 (None).
+- It's bumpy, not a smooth hill: depth 3 (0.610) is lower than depth 2 (0.625). With 40 students per fold, differences of 0.01 to 0.02 are within noise.
+
+**3. At what depth does the tree appear to perform best on unseen data?**
+- Depth 4 has the highest mean CV accuracy (0.670) and also the lowest std (0.040).
+- Use "appears to": its lead over depth 2 (0.625) is 0.045, about one std.
+
+**4. Do you see evidence of underfitting?**
+- Yes, at depth 1. Training accuracy is only 0.661, and CV accuracy (0.560) is actually **below the baseline (0.605)**. One question ("study hours <= 5.05?") is too simple to separate high and low scorers well. Doing worse than always guessing "No" is a strong sign.
+- Depth 2 is also fairly simple (training 0.712), but its CV score is close to the top.
+
+**5. Do you see evidence of overfitting?**
+- Yes, from depth 6 onward. Training accuracy shoots up (0.925, 0.979, 1.000) while CV accuracy goes down (0.615, 0.620, 0.595). On the plot the two lines spread apart.
+- Depth None is the clearest case: 100% on training students, 59.5% on held-out students, below the baseline.
+
+---
+
+## Part 12: Underfitting and Overfitting
+
+**1. Which depth appears to underfit?** Depth 1. Low training (0.661) and low CV (0.560), with CV below the baseline. Both scores are poor, which is the underfitting pattern. (A small gap of 0.101 doesn't mean it's good. It means it's equally bad on both.)
+
+**2. Which depth appears to generalize best?** Depth 4: highest CV (0.670), lowest CV std (0.040). Its gap (0.156) is moderate, similar to depth 3 (0.162). Depth 2 has the smallest gap (0.088) but lower CV accuracy. Mention the trade-off.
+
+**3. Do the deepest trees show signs of overfitting?** Yes. Gaps of 0.310 (depth 6), 0.359 (depth 8), 0.405 (None). The gap grows with every extra level past depth 4, and CV accuracy doesn't improve to make up for it.
+
+**4. Why should we not simply choose the tree with the highest training accuracy?**
+- Highest training accuracy is depth None (1.000), which has one of the worst CV scores (0.595, below the baseline).
+- Training accuracy measures how well the model fits students it has already seen, including their noise and quirks. It rewards memorizing. We care about **new** students, which is what CV estimates.
+- Training accuracy always goes up with depth, so "pick the highest" would always pick the most complex model.
+
+---
+
+## Part 13: Select a Decision-Tree Depth
+
+**Facts to use (your decision, not filled in):**
+- Ranked by CV: 4 (0.670), 2 (0.625), 8 (0.620), 6 (0.615), 3 (0.610), None (0.595), 1 (0.560).
+- "Roughly tied" cutoff = 0.670 − 0.040 = 0.630. Only depth 4 clears it. **Depth 2 misses by 0.005**, and one student in one fold changes the mean by 0.005. So depth 2 is borderline. With depth 2's own std (0.057), the two overlap.
+- Things to weigh in your reasoning:
+  - **Mean CV performance:** depth 4 is highest.
+  - **Variability:** depth 4 has the lowest std (0.040), so it's also the most consistent across folds.
+  - **Complexity:** depth 2 is much simpler (at most 4 leaves vs 12) and has the smallest gap. The "prefer the simpler model when roughly tied" rule applies only if you treat 4 and 2 as tied.
+- Note: depth 4 is the same model as `tree_d4` in Part 8. If you choose 4, the "tuned" tree in Part 14 will have the same scores as the depth-4 row. That's fine, and worth saying: tuning confirmed the original choice.
+- Context: even the best tree (0.670) is below Logistic Regression (0.740) and Random Forest (0.690) from Part 8.
+
+---
+
+## Part 17: Why Not Tune Using the Test Set?
+
+**1. What is wrong with the first procedure?**
+- The test set is used to make decisions. Every "check test accuracy, then change something" round picks whatever happens to work best on those specific 50 students.
+- After enough rounds, the model is fitted to the test set, including its noise. The final test score looks better than the model really is.
+
+**2. How has the test set indirectly become part of model development?**
+- The model never trains on test rows directly, but **you** do: you look at test scores and keep the changes that raise them. Information flows from the test set into the model through your choices (features, depth, which model).
+- It's like training with an extra step. The data is used for selection, which is a form of fitting.
+- Link to class 8: the quiz_average and class_weight experiments were each judged by their test scores. That was Workflow 1.
+
+**3. Why is the final test score no longer a completely independent evaluation?**
+- An independent evaluation needs data that had no influence on the model. After repeated checks, the test set helped choose the model, so it isn't independent.
+- With small test sets, random luck is big (50 students: 1 student = 2 points). If you try 10 variations, the one that scores best on the test set is partly the luckiest. Its score is biased upward. This is called **selection bias** or "overfitting to the test set".
+
+**4. Why is the second workflow preferable?**
+- All comparing and tuning uses CV on the training set. Each decision is based on 5 validation folds (more stable than one test set).
+- The test set is used **once**, after every choice is final, so its score is an honest estimate for new students.
+- If the test score roughly matches the CV estimate, that's evidence the process worked. If it's much lower, it warns you something went wrong.
+- It also mirrors real life: once a model is deployed, the "test set" is future students you can't tune on.
+
+---
+
+## Part 18: Scaling and Different Models
+
+**Evidence from the demo (attendance_rate only, 200 training rows):**
+
+| Raw threshold | Scaled threshold | Scaled, converted back |
+|---|---|---|
+| 91.60 | 0.646 | 91.60 |
+| 80.75 | -0.480 | 80.75 |
+| 98.15 | 1.326 | 98.15 |
+
+Predictions identical for 200 of 200 rows. Training attendance mean is about 85.3, std about 9.7.
+
+**1. Why is scaling useful for Logistic Regression?**
+- LR multiplies each feature by a coefficient and adds them up. Feature units affect the size of each coefficient: commute (0 to 145 minutes) needs a tiny coefficient, sleep (4.3 to 10 hours) a big one.
+- **Regularization** (on by default) penalizes large coefficients. Without scaling, it punishes features unfairly just because of their units. With scaling, every feature is on the same footing (mean 0, std 1).
+- **Optimization:** the solver finds the coefficients step by step. Features on similar scales converge faster and more reliably.
+- **Interpretation:** scaled coefficients can be compared with each other. A coefficient then means the effect of a one-std change in that feature.
+
+**2. Why do Decision Trees generally not require scaling?**
+- A tree asks one feature at a time, "is attendance <= 80.75?". Scaling changes the number in the question (80.75 becomes -0.480) but not the order of the students, so the same students go left and right.
+- The demo proves it: converted back, the scaled thresholds are exactly the raw ones (91.60, 80.75, 98.15), and all 200 predictions match.
+- Trees never add features together or measure distances, so units never mix.
+
+**3. Why do Random Forests generally not require scaling?**
+- A Random Forest is a collection of decision trees that vote. Each tree is unaffected by scaling for the reason above, so the vote is too.
+- The randomness (bootstrap samples, random feature subsets) is about which rows and columns each tree sees, not the units of the values.
