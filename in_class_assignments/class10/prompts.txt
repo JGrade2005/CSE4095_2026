@@ -1,0 +1,200 @@
+Part 1 — Define the Classification Problem
+
+Part 1: Create a new column high_exam_score that is "Yes" if exam_score >= 80 and "No" otherwise. Show the counts and percentages of each class (value_counts with normalize=True), and make a simple bar chart of the class distribution. Add the Part 1 questions as Markdown with answer placeholders:
+- What are you trying to predict?
+- Why is this a classification problem?
+- What percentage of students belong to each class?
+- Is the dataset approximately balanced?
+
+------------------------------------------------------------
+
+Part 2 — Select the Features
+
+Part 2: Define the feature list as exactly:
+study_hours_per_week, sleep_hours_per_night, attendance_rate, practice_problems_per_week, prior_programming_experience, study_group, commute_minutes.
+Create X from these columns and y = high_exam_score. Explicitly exclude student_id, exam_score, and quiz_average (add a code comment saying so).
+Identify which features are numerical and which are categorical by checking dtypes, store them in lists numeric_features and categorical_features, and print both lists. Add the question as Markdown with a placeholder: "Why would using exam_score be target leakage?"
+
+------------------------------------------------------------
+
+Part 3 — Create the Final Test Set
+
+Part 3: Use train_test_split with test_size=0.2, random_state=42, and stratify=y to create X_train, X_test, y_train, y_test. Print the shapes and the class proportions in y_train and y_test to confirm stratification worked. Add a clear Markdown warning cell: "The test set is now locked away until Part 15." Then add the Part 3 questions with placeholders:
+- Why are we holding the test set aside?
+- What could happen if we repeatedly check test accuracy while modifying our model?
+
+------------------------------------------------------------
+
+Part 4 — Build the Preprocessing Pipeline
+
+Part 4: Build a ColumnTransformer called `preprocessor`:
+- numeric: Pipeline of SimpleImputer(strategy="median") → StandardScaler()
+- categorical: Pipeline of SimpleImputer(strategy="most_frequent") → OneHotEncoder(handle_unknown="ignore")
+Use numeric_features and categorical_features from Part 2. Also write a small helper function make_pipeline_for(model) that returns Pipeline([("prep", preprocessor), ("model", model)]) so every model gets identical preprocessing (use sklearn.base.clone on the preprocessor so pipelines don't share fitted state).
+Add the Part 4 questions with placeholders:
+- Why should preprocessing be included inside the pipeline?
+- Why is this especially important when using cross-validation?
+- Which of the models in this assignment are sensitive to feature scaling?
+- Do Decision Trees and Random Forests generally require scaling?
+
+------------------------------------------------------------
+
+Part 5 — Establish a Baseline
+
+Part 5: Create a DummyClassifier(strategy="most_frequent") wrapped in the same pipeline helper. Evaluate it with cross_val_score on X_train, y_train using `cv` and scoring="accuracy". Print the score for each fold, the mean, and the standard deviation. Do not use the test set.
+Add the Part 5 questions with placeholders:
+- What does the baseline do?
+- What is its mean CV accuracy?
+- Why should our machine-learning models be compared with this baseline?
+
+------------------------------------------------------------
+
+Part 6 — Understand Cross-Validation
+
+Part 6: This part is mostly conceptual. Add a Markdown cell showing the 5-fold diagram from the assignment (Fold 1: VALIDATE | train | train | train | train, etc.). Then add a short code cell that loops over cv.split(X_train, y_train) and prints, for each fold, the number of training rows, the number of validation rows, and the % of "Yes" in the validation fold. This makes the folds concrete.
+Add the Part 6 questions with placeholders:
+- What happens during 5-fold cross-validation?
+- How many times is each model trained?
+- Why is cross-validation more informative than a single training/validation split?
+- Why do we still keep a separate final test set?
+
+------------------------------------------------------------
+
+Part 7 — Create the Three Models
+
+Part 7: Create three pipelines with the helper function:
+- log_reg: LogisticRegression(max_iter=1000, random_state=42)
+- tree_d4: DecisionTreeClassifier(max_depth=4, random_state=42)
+- rf: RandomForestClassifier(n_estimators=200, random_state=42)
+Just define them. Don't evaluate yet. Add a one-line comment for each explaining the model.
+
+------------------------------------------------------------
+
+Part 8 — Compare the Models with Cross-Validation
+
+Part 8: Evaluate the baseline, Logistic Regression, Decision Tree (depth 4), and Random Forest using cross_validate on X_train, y_train with the same `cv`. Use these scorers so "Yes" is treated as the positive class:
+- accuracy
+- precision: make_scorer(precision_score, pos_label="Yes", zero_division=0)
+- recall: make_scorer(recall_score, pos_label="Yes", zero_division=0)
+Build a pandas DataFrame comparison table with columns: Model, Mean CV Accuracy, Std. Accuracy, Mean Precision, Mean Recall, rounded to 3 decimals. Write a reusable function evaluate_cv(name, pipeline) that returns one row so we can reuse it in Part 14.
+Do NOT label any model as "best" in the output. Add the Part 8 questions with placeholders:
+- Which model has the highest mean CV accuracy?
+- How large are the differences?
+- Which model has the highest recall?
+- Do all metrics identify the same model?
+- How much does performance vary between folds?
+Also add a Markdown note reminding me to use cautious language when differences are small relative to the std.
+
+------------------------------------------------------------
+
+Part 9 — Hyperparameters
+
+Part 9: In this chat (not in the notebook), explain to me the difference between a model parameter and a hyperparameter, using DecisionTreeClassifier max_depth as the example. Keep it beginner-friendly. Then add only a Markdown cell to the notebook with the Part 9 heading and a placeholder: "**In my own words (using max_depth as the example):**". I'll write that answer myself.
+
+------------------------------------------------------------
+
+Part 10 — Experiment with Decision-Tree Depth
+
+Part 10: Loop over max_depth values [1, 2, 3, 4, 6, 8, None]. For each, build a DecisionTreeClassifier(max_depth=d, random_state=42) pipeline and run cross_validate on X_train, y_train with `cv`, scoring="accuracy", and return_train_score=True. Record mean training accuracy, mean CV accuracy, and CV std. Display a table with columns: max_depth, Training Accuracy, CV Accuracy, CV Std. (show None as the string "None"). Store results in a DataFrame called depth_results for plotting. Do not use the test set.
+
+------------------------------------------------------------
+
+Part 11 — Visualize Model Complexity
+
+Part 11: Using depth_results, plot max_depth on the x-axis (treat values as categorical labels "1","2","3","4","6","8","None" so spacing is even) and accuracy on the y-axis. Plot two lines with markers: Training Accuracy and CV Accuracy. Add a shaded band of ±1 CV std around the CV line. Add a title, axis labels, legend, and grid.
+Add the Part 11 questions with placeholders:
+- What happens to training accuracy as max_depth increases?
+- What happens to cross-validation accuracy?
+- At what depth does the tree appear to perform best on unseen data?
+- Do you see evidence of underfitting?
+- Do you see evidence of overfitting?
+
+------------------------------------------------------------
+
+Part 12 — Underfitting and Overfitting
+
+Part 12: Add a Markdown cell summarizing the three patterns from the assignment (underfitting: train poor / validation poor; good generalization: both good; overfitting: train very high / validation noticeably lower). Add a small code cell that adds a "Gap (Train − CV)" column to depth_results and displays it, to help me spot overfitting.
+Add the Part 12 questions with placeholders:
+- Which Decision Tree depth appears to underfit?
+- Which depth appears to generalize best?
+- Do the deepest trees show signs of overfitting?
+- Why should we not simply choose the tree with the highest training accuracy?
+
+------------------------------------------------------------
+
+Part 13 — Select a Decision-Tree Depth
+
+Part 13: Don't choose the depth for me. Add a code cell that sorts depth_results by CV Accuracy and highlights which depths fall within one CV std of the top mean CV score (a "roughly tied" group). Then add a code cell with a variable `chosen_depth = None  # TODO: set this after reading the table` and a Markdown placeholder: "**My chosen depth and reasoning (mean CV performance, variability, model complexity):**".
+After adding the cells, tell me in the chat what you see in the results so I can make my decision, but don't fill in chosen_depth.
+
+(Set `chosen_depth` yourself before moving on.)
+
+------------------------------------------------------------
+
+Part 14 — Compare the Tuned Tree Again
+
+Part 14: I have set chosen_depth in the notebook. Create a tuned Decision Tree pipeline with max_depth=chosen_depth and random_state=42. Use the evaluate_cv function from Part 8 to rebuild the full comparison table with five rows: Majority baseline, Logistic Regression, Decision Tree (depth 4), Tuned Decision Tree (depth = chosen_depth), and Random Forest. Same `cv`, same metrics. Still no test set.
+Add a code cell `final_model_name = None  # TODO` and a Markdown placeholder: "**Based only on CV results, the model I will carry forward is ___ because ___.**"
+
+(Pick your final model and fill this in before Part 15.)
+
+------------------------------------------------------------
+
+Part 15 — Final Test Evaluation
+
+Part 15: The test set is now unlocked. Take the model named in final_model_name, fit it ONCE on the full X_train, y_train, and evaluate it ONCE on X_test, y_test. Report accuracy, precision, and recall (pos_label="Yes"), and display a confusion matrix using ConfusionMatrixDisplay with labels ["No", "Yes"]. Also compute the majority-class test accuracy (proportion of the most common TRAINING class in y_test) for context. Show a small side-by-side table: CV mean (from Part 14) vs. test result for accuracy, precision, and recall.
+Do not try any other models on the test set.
+Add the Part 15 questions with placeholders:
+- How does final test accuracy compare with mean CV accuracy?
+- Is it reasonably consistent with CV?
+- Did the model outperform the majority-class baseline?
+- Are precision and recall similar to the CV results?
+
+------------------------------------------------------------
+
+Part 16 — Analyze the Final Errors
+
+Part 16: Using the final model's test predictions, build a DataFrame of X_test with columns for actual and predicted labels. Create two DataFrames: false_positives (predicted Yes, actually No) and false_negatives (predicted No, actually Yes). Print the count of each, and display up to 5 rows of each with all feature values (plus the original exam_score, looked up from df by index, for context only, not used by the model). Also show the mean of numeric features for FP, FN, and correctly classified rows side by side so I can look for patterns.
+Add the Part 16 questions with placeholders:
+- How many false positives occurred?
+- How many false negatives occurred?
+- Do you notice any patterns among the mistakes?
+- Are some observations likely more difficult to classify than others?
+Add a Markdown reminder to avoid causal language.
+
+------------------------------------------------------------
+
+Part 17 — Why Not Tune Using the Test Set?
+
+Part 17: This is conceptual only, with no code. Add Markdown cells showing both workflows from the assignment (the "check TEST accuracy after every change" workflow and the "training data → CV → compare → tune → select → FINAL TEST" workflow) as code-formatted diagrams. Add the Part 17 questions with placeholders:
+- What is wrong with the first procedure?
+- How has the test set indirectly become part of model development?
+- Why is the final test score no longer a completely independent evaluation?
+- Why is the second workflow preferable?
+
+------------------------------------------------------------
+
+Part 18 — Scaling and Different Models
+
+Part 18: Add a short code demonstration using only the training data. Fit a DecisionTreeClassifier(max_depth=2, random_state=42) on attendance_rate alone, once raw and once standardized (drop rows with missing attendance_rate for this demo). Print the learned split thresholds for both trees (from tree_.threshold) and show that the predictions on the training rows are identical. Then convert the standardized threshold back to the original scale to show they're the same cut point.
+Add the Part 18 questions with placeholders:
+- Why is scaling useful for Logistic Regression?
+- Why do Decision Trees generally not require scaling?
+- Why do Random Forests generally not require scaling?
+
+------------------------------------------------------------
+
+Part 19 — Your Controlled Experiment
+
+Fill in the bracketed parts with your own choice and hypothesis first:
+
+Part 19: I want to run this controlled experiment: [e.g., compare Logistic Regression with and without StandardScaler / compare 5-fold vs 10-fold CV / compare Random Forest with n_estimators 10, 50, 200].
+My hypothesis: I expect [___] because [___].
+First add a Markdown cell with my hypothesis exactly as written. Then implement the experiment using cross-validation on X_train, y_train only. Change ONLY the one factor I named and keep everything else identical. Show a results table (mean and std) and, if helpful, one simple plot. Add a Markdown placeholder: "**Results and whether they support my hypothesis:**". Do not use the test set.
+
+------------------------------------------------------------
+
+Part 20 — AI Reflection
+
+Part 20: Add Markdown cells for the AI Reflection with these headings and empty placeholders for me to fill in: What did you ask? / What did the AI recommend? / Did you accept the recommendation? / How did you verify it? / Did you simplify or modify the AI's proposed solution? / What did you learn? / Did the AI ever suggest using the test set while comparing or tuning models? If so, what did you do?
+Don't write the answers. Then run the whole notebook from a fresh kernel (jupyter nbconvert --to notebook --execute --inplace) and confirm it runs end to end. Finally, list any Markdown "My answer" placeholders that are still empty so I know what I still need to write.

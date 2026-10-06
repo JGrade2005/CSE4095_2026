@@ -69,3 +69,143 @@ Key ideas and evidence for every question in `CSE4095_Class10_Starter.ipynb`.
 - You also lose your only unbiased measurement. There is no clean data left to check the model honestly.
 - Why it's easy to fool yourself here: with 50 test students, **one student = 2 percentage points** of accuracy. Small, random differences can look like real improvements, and if you keep trying changes, one of them will "win" by luck.
 - Fix: compare and tune with cross-validation on the training set (the shared `cv` folds), then evaluate on the test set once.
+
+---
+
+## Part 4: Preprocessing Pipeline
+
+**Evidence you can point to (training set, 200 students):**
+
+| Feature | min | max | std |
+|---|---|---|---|
+| study_hours_per_week | 0.3 | 17.8 | 2.9 |
+| sleep_hours_per_night | 4.3 | 10.0 | 1.1 |
+| attendance_rate | 54.4 | 100.0 | 9.7 |
+| practice_problems_per_week | 0 | 78 | 10.0 |
+| commute_minutes | 0 | 145 | 18.8 |
+
+Missing in the training set: study hours 6, sleep 11, prior experience 5. So the imputers really are needed.
+
+**1. Why should preprocessing be included inside the pipeline?**
+- **Fit on training data only.** The imputer's medians, the scaler's mean and std, and the encoder's categories are all *learned* values. Inside a pipeline, `fit` learns them from the training data only, and `predict` just applies them to new data. Nothing is learned from data the model is evaluated on.
+- **Same steps every time.** New data goes through exactly the same transformations automatically. You can't forget a step or apply it in a different order at prediction time.
+- **One object.** The whole workflow (clean, scale, encode, model) is fitted, cross-validated, and evaluated as one unit. That keeps the code simple and makes model comparisons fair, because every model gets identical preprocessing through `make_pipeline_for`.
+
+**2. Why is this especially important when using cross-validation?**
+- In each CV round, one fold plays the role of "unseen" data. If you preprocess the whole training set *before* CV, the medians and scaler statistics were computed using that validation fold too. That's a small leak: the validation fold is no longer truly unseen, so the CV score is slightly too optimistic.
+- When the pipeline is passed to `cross_validate`, the preprocessing is **re-fitted inside every fold** on that fold's training part only. Each validation fold is treated exactly like the test set will be later.
+- Concrete example from this data: the median of `study_hours_per_week` is 7.4 on all 200 training students, but 7.3 to 7.5 depending on which fold is held out. The differences are small here, but the principle matters more with bigger effects (target encoding, feature selection, oversampling).
+- Fair comparison: every model is evaluated with identical, leak-free preprocessing on identical folds (`cv`).
+
+**3. Which of the models in this assignment are sensitive to feature scaling?**
+- The assignment's models (Part 7) are the majority baseline, Logistic Regression, Decision Tree, and Random Forest. Scale-sensitive models are the ones that use **distances or coefficient sizes**:
+  - **Logistic Regression: yes. It's the only one of the four.** Regularization (on by default, `C=1.0`) penalizes all coefficients the same way. A feature measured in big units (commute 0 to 145) needs a tiny coefficient and one in small units (sleep 4.3 to 10) needs a big one, so the penalty treats them unfairly. Unscaled data can also make the solver converge slowly.
+  - **DummyClassifier (baseline): no.** It ignores the features entirely.
+  - **Decision Tree / Random Forest: no** (see Q4).
+
+**4. Do Decision Trees and Random Forests generally require scaling?**
+- **No.** A tree splits one feature at a time with a threshold, like "attendance_rate <= 82.5". Scaling changes the threshold's number but not *which students end up on each side*, so the splits and predictions are the same.
+- A Random Forest is many trees, so the same reasoning applies.
+- They never compare different features to each other or compute distances, so units don't matter.
+- It's still fine to leave the scaler in the shared preprocessor. It doesn't hurt trees, and it keeps the preprocessing identical for every model, which is what makes the comparison fair.
+- Caveat: trees still need missing values filled and categories turned into numbers in scikit-learn, so the imputers and one-hot encoder are still needed.
+
+---
+
+## Part 5: Establish a Baseline
+
+**Evidence:** fold accuracies 0.625, 0.600, 0.600, 0.600, 0.600. Mean 0.605, std 0.010.
+
+**1. What does the baseline do?**
+- `DummyClassifier(strategy="most_frequent")` ignores every feature. During `fit` it only counts which label is most common in the training folds ("No"), then predicts "No" for every student.
+- It's not meant to be a real model. It's a reference point: "how well can you do without learning anything?"
+
+**2. What is its mean CV accuracy?**
+- 0.605 (60.5%). That matches the share of "No" in `y_train` (121 of 200 = 60.5%), which is exactly what you'd predict if it always guesses "No".
+- Why fold 1 is different (0.625): Part 6 shows fold 1 has 37.5% Yes (15 of 40), so it has 25 No students, and 25/40 = 0.625. The other folds have 16 Yes / 24 No, so 24/40 = 0.600.
+- The std is tiny (0.010) because stratification keeps the class mix nearly identical in every fold.
+
+**3. Why should our machine-learning models be compared with this baseline?**
+- It sets the bar. A model's accuracy only means something compared with what you'd get for free. 74% sounds fine on its own, but the real story is "about 13 points better than always guessing No".
+- With imbalanced classes, accuracy can look decent with zero learning. The baseline gets 60.5% accuracy but **0% recall**: it never finds a single high scorer (see Part 8).
+- If a model can't clearly beat the baseline, its features aren't adding useful information, or something is broken.
+
+---
+
+## Part 6: Understand Cross-Validation
+
+**Evidence:** every fold has 160 training rows and 40 validation rows. % Yes in validation: 37.5, 40.0, 40.0, 40.0, 40.0.
+
+**1. What happens during 5-fold cross-validation?**
+- The 200 training students are split into 5 groups of 40 (folds). `StratifiedKFold` keeps about 40% Yes in each.
+- The model is trained 5 times. Each round, 4 folds (160 students) are used to fit (preprocessing included) and the 5th fold (40 students) is used to score.
+- Every student is in the validation fold exactly once. You get 5 scores, then report the mean (typical performance) and std (how much it varies).
+
+**2. How many times is each model trained?**
+- 5 times during CV, once per fold. Each time it's a fresh, unfitted copy.
+- Detail for a strong answer: `cross_validate` doesn't keep any of those 5 fitted models. When you later want a final model (Part 15), you train it a 6th time on all 200 training students.
+
+**3. Why is cross-validation more informative than a single training/validation split?**
+- One split gives one number, and that number depends on which 40 students happened to land in validation. With 40 students, one student moves accuracy by 2.5 points.
+- CV gives 5 numbers. The mean is more stable, and the std tells you how much luck is involved. One split can't tell you that.
+- Every training student gets used for both training and validation, so no data is "wasted".
+- Evidence from Part 8: Logistic Regression's fold accuracies range from 0.65 to 0.85. A single split could have reported either one.
+- Link to class 9: one test student (S174) caused about 40% of Linear Regression's squared error and decided which model "won" on RMSE.
+
+**4. Why do we still keep a separate final test set?**
+- CV scores are used to **make choices** (which model, which depth). Once you pick the model with the best CV score, that score is slightly optimistic, because you picked a winner and part of winning can be luck.
+- The test set was never used for any choice, so it gives an honest, independent estimate at the very end.
+- In short: CV is for choosing, the test set is for confirming.
+
+---
+
+## Part 7: Create the Three Models (no questions)
+
+Quick reference for later answers:
+- **Logistic Regression:** learns one weight per feature, adds them up, and turns the total into a probability of "Yes". Simple, fast, scale-sensitive.
+- **Decision Tree (depth 4):** a flowchart of up to 4 yes/no questions ("attendance <= 82?"). Easy to read. Depth limits how complex it can get.
+- **Random Forest (200 trees):** each tree is trained on a random resample of students and considers random subsets of features. The trees vote. Usually more stable than one tree, but harder to interpret.
+
+---
+
+## Part 8: Compare the Models with Cross-Validation
+
+**Evidence (from the comparison table):**
+
+| Model | Mean CV Accuracy | Std. Accuracy | Mean Precision | Mean Recall |
+|---|---|---|---|---|
+| Majority baseline | 0.605 | 0.010 | 0.000 | 0.000 |
+| Logistic Regression | 0.740 | 0.064 | 0.728 | 0.571 |
+| Decision Tree (depth 4) | 0.670 | 0.040 | 0.598 | 0.493 |
+| Random Forest | 0.690 | 0.072 | 0.642 | 0.518 |
+
+Per-fold accuracy (not in the notebook, but useful):
+- Logistic Regression: 0.725, 0.650, 0.850, 0.750, 0.725
+- Decision Tree (depth 4): 0.700, 0.625, 0.725, 0.675, 0.625
+- Random Forest: 0.625, 0.650, 0.800, 0.750, 0.625
+
+**1. Which model has the highest mean CV accuracy?**
+- Logistic Regression, 0.740. Random Forest 0.690, Tree 0.670, baseline 0.605.
+
+**2. How large are the differences?**
+- LR vs RF: 0.050. LR vs Tree: 0.070. RF vs Tree: 0.020. All three real models beat the baseline by 0.065 to 0.135.
+- Compare with the stds (0.04 to 0.07):
+  - **RF vs Tree (0.020)** is smaller than either std, so they're effectively tied.
+  - **LR vs RF (0.050)** is about the size of one std. That's suggestive, not conclusive. It's a good place for "slightly higher" language.
+  - Extra evidence: since every model uses the same folds, you can compare fold by fold. LR is at least as good as RF in all 5 folds (better in 3, tied in 2) and better than the tree in all 5. That makes LR's lead more believable than the means alone suggest.
+- One student in a fold is 0.025, so a 0.050 gap is about 2 students per fold.
+
+**3. Which model has the highest recall?**
+- Logistic Regression, 0.571. It finds about 57% of the actual high scorers. The tree finds 49%, the forest 52%, and the baseline 0%.
+- All models miss over 40% of high scorers. Recall is the weakest metric for every model.
+
+**4. Do all metrics identify the same model?**
+- Yes, in this table LR is highest on accuracy, precision (0.728), and recall (0.571).
+- But not on stability: LR's std (0.064) is higher than the tree's (0.040). If you value consistency, the tree is the most stable real model, though it's also the least accurate.
+- In general metrics can disagree (as RMSE vs MAE did in class 9), so it's worth checking all of them.
+
+**5. How much does performance vary between folds?**
+- The baseline barely varies (std 0.010). The real models vary a lot more: std 0.040 (Tree), 0.064 (LR), 0.072 (RF).
+- In concrete terms: LR ranges from 0.650 to 0.850 depending on which 40 students are held out. That's a 20-point spread from one model.
+- Fold 3 is the "easy" fold for every model (LR 0.85, RF 0.80, Tree 0.725) and fold 2 is hard for all of them. So part of the variation comes from **which students** are in the fold, not just from the model.
+- That's why one train/validation split would be risky, and why small differences between means should be described cautiously.
