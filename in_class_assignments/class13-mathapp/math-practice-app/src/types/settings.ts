@@ -10,4 +10,5 @@ export interface AppSettings {
   defaultOperations: MathOperation[];
   masteryThreshold: number;
   allowNegativeSubtraction: boolean;
+  feedbackMessagesEnabled: boolean;
 }

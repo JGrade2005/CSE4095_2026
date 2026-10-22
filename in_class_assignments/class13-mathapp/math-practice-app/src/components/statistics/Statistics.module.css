@@ -1,0 +1,97 @@
+.section {
+  margin-top: 2rem;
+}
+
+.heading {
+  margin: 0 0 1rem;
+  color: var(--color-primary);
+  font-size: 1.5rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+  gap: 1rem;
+  margin: 0;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  padding: 1rem;
+  border: 3px solid var(--color-primary-tint);
+  border-radius: 1rem;
+  background: var(--color-surface);
+}
+
+.cardTitle {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+}
+
+.rows {
+  margin: 0;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.row dt {
+  font-weight: 400;
+}
+
+.row dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.accuracy {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 2px solid var(--color-primary-tint);
+  color: var(--color-primary);
+}
+
+.subheading {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1.25rem;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.listItem {
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 3px solid var(--color-primary-tint);
+  border-radius: 1rem;
+  background: var(--color-surface);
+  overflow-wrap: anywhere;
+}
+
+.fact {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.detail {
+  margin-right: 1rem;
+}
+
+.toggle {
+  margin-bottom: 1rem;
+}

@@ -92,6 +92,10 @@ export function validateSettings(raw: unknown): AppSettings {
       raw.allowNegativeSubtraction,
       defaults.allowNegativeSubtraction,
     ),
+    feedbackMessagesEnabled: pickBoolean(
+      raw.feedbackMessagesEnabled,
+      defaults.feedbackMessagesEnabled,
+    ),
   };
 }
 

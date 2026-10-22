@@ -12,6 +12,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   defaultOperations: ["addition"],
   masteryThreshold: 3,
   allowNegativeSubtraction: false,
+  feedbackMessagesEnabled: true,
 };
 
 // Fresh copy so callers can never mutate the shared defaults array.

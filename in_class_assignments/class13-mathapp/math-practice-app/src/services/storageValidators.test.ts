@@ -67,6 +67,7 @@ describe("validateSettings", () => {
       defaultOperations: ["division", "addition"],
       masteryThreshold: 5,
       allowNegativeSubtraction: true,
+      feedbackMessagesEnabled: false,
     };
     expect(validateSettings(stored)).toEqual({
       ...stored,
@@ -84,6 +85,7 @@ describe("validateSettings", () => {
       defaultOperations: [],
       masteryThreshold: 2.5,
       allowNegativeSubtraction: "no",
+      feedbackMessagesEnabled: "off",
     });
     expect(result).toEqual({ ...DEFAULT_SETTINGS, cardAnimationEnabled: false });
   });
