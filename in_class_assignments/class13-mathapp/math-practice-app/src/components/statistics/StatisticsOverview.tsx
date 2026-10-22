@@ -28,10 +28,10 @@ export default function StatisticsOverview({
         />
       )}
       <dl className={styles.grid}>
-        <StatCard label="Questions attempted" value={attempted} />
-        <StatCard label="Correct answers" value={correct} />
-        <StatCard label="Incorrect answers" value={incorrect} />
-        <StatCard label="Accuracy" value={`${accuracy}%`} />
+        <StatCard label="Questions attempted" value={attempted} tone="primary" />
+        <StatCard label="Correct answers" value={correct} tone="good" />
+        <StatCard label="Incorrect answers" value={incorrect} tone="warm" />
+        <StatCard label="Accuracy" value={`${accuracy}%`} tone="sun" />
       </dl>
     </section>
   );

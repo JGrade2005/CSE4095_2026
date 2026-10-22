@@ -1,7 +1,34 @@
 .tile {
+  --accent: var(--color-primary);
+  --accent-strong: var(--color-primary-strong);
+  --accent-tint: var(--color-primary-tint);
   position: relative;
   display: block;
   cursor: pointer;
+}
+
+.add {
+  --accent: var(--op-add);
+  --accent-strong: var(--op-add-strong);
+  --accent-tint: var(--op-add-tint);
+}
+
+.sub {
+  --accent: var(--op-sub);
+  --accent-strong: var(--op-sub-strong);
+  --accent-tint: var(--op-sub-tint);
+}
+
+.mul {
+  --accent: var(--op-mul);
+  --accent-strong: var(--op-mul-strong);
+  --accent-tint: var(--op-mul-tint);
+}
+
+.div {
+  --accent: var(--op-div);
+  --accent-strong: var(--op-div-strong);
+  --accent-tint: var(--op-div-tint);
 }
 
 .input {
@@ -16,24 +43,27 @@
 
 .body {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  align-items: center;
+  gap: 0.75rem;
   height: 100%;
   min-height: 3rem;
   padding: 0.75rem 1rem;
   border: 3px solid var(--color-disabled-border);
-  border-radius: 1rem;
+  border-radius: var(--radius-control);
+  box-shadow: 0 0.25rem 0 rgb(26 20 70 / 15%);
   background: var(--color-surface);
 }
 
 .tile:hover .body {
-  background: var(--color-primary-tint);
+  background: var(--accent-tint);
 }
 
 .input:checked + .body {
-  border-color: var(--color-primary);
-  background: var(--color-primary-tint);
-  box-shadow: inset 0 0 0 2px var(--color-primary);
+  border-color: var(--accent);
+  background: var(--accent-tint);
+  box-shadow:
+    inset 0 0 0 2px var(--accent),
+    0 0.25rem 0 var(--accent);
 }
 
 .input:focus-visible + .body {
@@ -41,8 +71,23 @@
   outline-offset: 3px;
 }
 
+.icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
 .label {
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .description {
@@ -51,7 +96,23 @@
 
 .mark {
   min-height: 1.5em;
-  color: var(--color-primary);
+  color: var(--accent-strong);
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 800;
+}
+
+.stars {
+  color: var(--color-sun);
+  font-size: 1.125rem;
+  letter-spacing: 0.05em;
+  -webkit-text-stroke: 1px #9a6b00;
+}
+
+.bigNumber {
+  display: inline-block;
+  margin-right: 0.35rem;
+  color: var(--color-primary-strong);
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
 }

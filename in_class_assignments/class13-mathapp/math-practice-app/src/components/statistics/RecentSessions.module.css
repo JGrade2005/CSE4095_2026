@@ -76,3 +76,8 @@
     text-align: right;
   }
 }
+
+.table thead th {
+  color: var(--color-primary-strong);
+  font-weight: 800;
+}

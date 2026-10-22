@@ -1,25 +1,48 @@
 .slot {
   min-height: 3.5rem;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
   text-align: center;
 }
 
 .message {
+  --bubble-bg: var(--op-add-tint);
+  --bubble-border: var(--op-add);
+  --bubble-text: var(--op-add-strong);
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  max-width: 100%;
   margin: 0;
-  padding: 0.5rem 1.25rem;
-  border: 3px solid var(--color-primary);
-  border-radius: 999px;
-  background: var(--color-primary-tint);
-  color: var(--color-primary);
+  padding: 0.625rem 1.5rem;
+  border: 3px solid var(--bubble-border);
+  border-radius: 1.5rem;
+  background: var(--bubble-bg);
+  color: var(--bubble-text);
   font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: 800;
+  text-align: left;
+}
+
+.message::before {
+  content: "";
+  position: absolute;
+  top: -0.6rem;
+  left: 50%;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-left: -0.45rem;
+  transform: rotate(45deg);
+  border-top: 3px solid var(--bubble-border);
+  border-left: 3px solid var(--bubble-border);
+  border-top-left-radius: 0.2rem;
+  background: var(--bubble-bg);
 }
 
 .supportive {
-  border-style: dashed;
+  --bubble-bg: var(--color-primary-tint);
+  --bubble-border: var(--color-primary);
+  --bubble-text: var(--color-primary-strong);
 }
 
 .icon {
@@ -29,14 +52,15 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .message {
-    animation: pop-in 0.25s ease-out;
+    transform-origin: top center;
+    animation: pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 }
 
 @keyframes pop-in {
   from {
     opacity: 0;
-    transform: translateY(0.5rem);
+    transform: scale(0.7) translateY(0.5rem);
   }
 
   to {

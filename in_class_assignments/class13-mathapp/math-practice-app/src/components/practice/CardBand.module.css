@@ -1,0 +1,30 @@
+.band {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  border-radius: calc(var(--radius-card) - 4px) calc(var(--radius-card) - 4px) 0 0;
+  background: var(--card-color, var(--color-primary));
+  color: #ffffff;
+  text-align: left;
+}
+
+.ring {
+  display: inline-flex;
+  flex: none;
+  padding: 0.2rem;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.band > :not(.ring) {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.band > :focus-visible {
+  outline-color: #ffffff;
+}

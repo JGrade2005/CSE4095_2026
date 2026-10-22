@@ -3,6 +3,7 @@ import { DIFFICULTY_LEVELS } from "../../types/question";
 import type { DifficultyLevel } from "../../types/question";
 import { DIFFICULTY_DESCRIPTIONS, formatDifficulty } from "../../utils/labels";
 import OptionTile from "./OptionTile";
+import tileStyles from "./OptionTile.module.css";
 import styles from "./SelectorGroup.module.css";
 
 interface DifficultySelectorProps {
@@ -31,6 +32,7 @@ export default function DifficultySelector({
             onChange={() => onChange(level)}
             label={formatDifficulty(level)}
             description={DIFFICULTY_DESCRIPTIONS[level]}
+            icon={<span className={tileStyles.stars}>{"★".repeat(level)}</span>}
           />
         ))}
       </div>

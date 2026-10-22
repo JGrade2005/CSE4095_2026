@@ -16,7 +16,12 @@ export default function DifficultyStatistics({ byDifficulty }: DifficultyStatist
       </h2>
       <ul className={styles.cardGrid}>
         {DIFFICULTY_LEVELS.map((level) => (
-          <BreakdownCard key={level} title={formatDifficulty(level)} counts={byDifficulty[level]} />
+          <BreakdownCard
+            key={level}
+            title={formatDifficulty(level)}
+            counts={byDifficulty[level]}
+            level={level}
+          />
         ))}
       </ul>
     </section>

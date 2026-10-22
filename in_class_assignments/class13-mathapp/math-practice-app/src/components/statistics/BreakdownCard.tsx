@@ -1,17 +1,29 @@
 import { calculateAccuracy } from "../../services/statisticsService";
+import type { DifficultyLevel, MathOperation } from "../../types/question";
 import type { OperationStatistics } from "../../types/statistics";
+import OperationBadge from "../common/OperationBadge";
 import styles from "./Statistics.module.css";
 
 interface BreakdownCardProps {
   title: string;
   counts: OperationStatistics;
+  operation?: MathOperation;
+  level?: DifficultyLevel;
 }
 
-export default function BreakdownCard({ title, counts }: BreakdownCardProps) {
+export default function BreakdownCard({ title, counts, operation, level }: BreakdownCardProps) {
   const accuracy = calculateAccuracy(counts.correct, counts.attempted);
   return (
-    <li className={styles.card}>
-      <h3 className={styles.cardTitle}>{title}</h3>
+    <li className={`${styles.card} ${operation ? styles[operation] : ""}`}>
+      <div className={styles.cardHeader}>
+        {operation && <OperationBadge operation={operation} size="md" />}
+        <h3 className={styles.cardTitle}>{title}</h3>
+      </div>
+      {level !== undefined && (
+        <span className={styles.stars} aria-hidden="true">
+          {"★".repeat(level)}
+        </span>
+      )}
       <dl className={styles.rows}>
         <div className={styles.row}>
           <dt>Attempted</dt>

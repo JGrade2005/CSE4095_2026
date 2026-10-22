@@ -25,15 +25,61 @@
 }
 
 .card {
-  padding: 1rem;
+  --edge: var(--color-primary);
+  --ink: var(--color-primary-strong);
+  --tint: var(--color-surface);
+  padding: 0.75rem 1rem 1rem;
   border: 3px solid var(--color-primary-tint);
-  border-radius: 1rem;
-  background: var(--color-surface);
+  border-top: 0.5rem solid var(--edge);
+  border-radius: var(--radius-control);
+  background: var(--tint);
+  box-shadow: 0 0.3rem 0 rgb(26 20 70 / 12%);
+}
+
+.addition {
+  --edge: var(--op-add);
+  --ink: var(--op-add-strong);
+  --tint: var(--op-add-tint);
+}
+
+.subtraction {
+  --edge: var(--op-sub);
+  --ink: var(--op-sub-strong);
+  --tint: var(--op-sub-tint);
+}
+
+.multiplication {
+  --edge: var(--op-mul);
+  --ink: var(--op-mul-strong);
+  --tint: var(--op-mul-tint);
+}
+
+.division {
+  --edge: var(--op-div);
+  --ink: var(--op-div-strong);
+  --tint: var(--op-div-tint);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin: 0 0 0.5rem;
 }
 
 .cardTitle {
-  margin: 0 0 0.5rem;
+  margin: 0;
+  color: var(--ink);
   font-size: 1.25rem;
+}
+
+.stars {
+  display: block;
+  margin: -0.25rem 0 0.5rem;
+  color: var(--color-text);
+  font-size: 1rem;
+  letter-spacing: 0.15em;
+  -webkit-text-stroke: 1px var(--color-text);
 }
 
 .rows {
@@ -52,19 +98,27 @@
 
 .row dd {
   margin: 0;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .accuracy {
   margin-top: 0.5rem;
   padding-top: 0.5rem;
   border-top: 2px solid var(--color-primary-tint);
-  color: var(--color-primary);
+  color: var(--ink);
 }
 
 .subheading {
   margin: 1.5rem 0 0.5rem;
   font-size: 1.25rem;
+}
+
+.operationLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
 }
 
 .list {
@@ -74,18 +128,25 @@
 }
 
 .listItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   margin-bottom: 0.75rem;
   padding: 0.75rem 1rem;
   border: 3px solid var(--color-primary-tint);
-  border-radius: 1rem;
+  border-radius: var(--radius-control);
   background: var(--color-surface);
   overflow-wrap: anywhere;
+}
+
+.itemBody {
+  min-width: 0;
 }
 
 .fact {
   display: block;
   font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .detail {

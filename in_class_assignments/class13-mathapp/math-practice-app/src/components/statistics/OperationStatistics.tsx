@@ -18,6 +18,7 @@ export default function OperationStatistics({ byOperation }: OperationStatistics
         {MATH_OPERATIONS.map((operation) => (
           <BreakdownCard
             key={operation}
+            operation={operation}
             title={OPERATION_LABELS[operation]}
             counts={byOperation[operation]}
           />

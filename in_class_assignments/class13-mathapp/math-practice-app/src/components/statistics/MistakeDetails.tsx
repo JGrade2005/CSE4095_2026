@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { formatFact } from "../../services/mistakeStatistics";
 import type { MistakePattern } from "../../types/mistake";
+import OperationBadge from "../common/OperationBadge";
 import Button from "../common/Button";
 import styles from "./Statistics.module.css";
 
@@ -36,18 +37,21 @@ export default function MistakeDetails({ patterns, masteryThreshold }: MistakeDe
         <ul className={styles.list} aria-label={listLabel}>
           {shown.map((pattern) => (
             <li key={pattern.id} className={styles.listItem}>
-              <span className={styles.fact}>{formatFact(pattern)}</span>
-              <span className={styles.detail}>
-                Missed {pattern.incorrectCount} {pattern.incorrectCount === 1 ? "time" : "times"}
-              </span>
-              <span className={styles.detail}>
-                {pattern.mastered
-                  ? "Mastered"
-                  : `Progress: ${Math.min(pattern.similarCorrectCount, masteryThreshold)} of ${masteryThreshold} correct`}
-              </span>
-              <span className={styles.detail}>
-                Last missed: {new Date(pattern.lastIncorrectAt).toLocaleDateString()}
-              </span>
+              <OperationBadge operation={pattern.operation} size="md" />
+              <div className={styles.itemBody}>
+                <span className={styles.fact}>{formatFact(pattern)}</span>
+                <span className={styles.detail}>
+                  Missed {pattern.incorrectCount} {pattern.incorrectCount === 1 ? "time" : "times"}
+                </span>
+                <span className={styles.detail}>
+                  {pattern.mastered
+                    ? "Mastered"
+                    : `Progress: ${Math.min(pattern.similarCorrectCount, masteryThreshold)} of ${masteryThreshold} correct`}
+                </span>
+                <span className={styles.detail}>
+                  Last missed: {new Date(pattern.lastIncorrectAt).toLocaleDateString()}
+                </span>
+              </div>
             </li>
           ))}
         </ul>

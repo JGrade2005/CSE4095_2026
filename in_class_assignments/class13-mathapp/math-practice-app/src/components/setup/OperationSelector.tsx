@@ -1,4 +1,5 @@
 import Button from "../common/Button";
+import OperationBadge from "../common/OperationBadge";
 import { MATH_OPERATIONS } from "../../types/question";
 import type { MathOperation } from "../../types/question";
 import { OPERATION_LABELS } from "../../utils/labels";
@@ -11,6 +12,13 @@ interface OperationSelectorProps {
   onChange: (operations: MathOperation[]) => void;
   legend?: string;
 }
+
+const ACCENTS = {
+  addition: "add",
+  subtraction: "sub",
+  multiplication: "mul",
+  division: "div",
+} as const;
 
 export default function OperationSelector({
   value,
@@ -35,6 +43,8 @@ export default function OperationSelector({
             checked={value.includes(operation)}
             onChange={() => toggle(operation)}
             label={`${OPERATION_SYMBOLS[operation]} ${OPERATION_LABELS[operation]}`}
+            icon={<OperationBadge operation={operation} size="md" />}
+            accent={ACCENTS[operation]}
           />
         ))}
       </div>

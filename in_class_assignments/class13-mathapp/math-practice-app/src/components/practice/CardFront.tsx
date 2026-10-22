@@ -3,6 +3,7 @@ import type { Question } from "../../types/question";
 import { speakQuestion } from "../../utils/spokenMath";
 import Button from "../common/Button";
 import AnswerChoice from "./AnswerChoice";
+import CardBand from "./CardBand";
 import styles from "./CardFront.module.css";
 
 export interface CardFrontProps {
@@ -28,35 +29,39 @@ export default function CardFront({
 }: CardFrontProps) {
   return (
     <div className={styles.front}>
-      <p className={styles.counter}>
-        {totalQuestions === null
-          ? `Question ${questionNumber}`
-          : `Question ${questionNumber} of ${totalQuestions}`}
-      </p>
-      <h2
-        ref={headingRef}
-        tabIndex={-1}
-        className={styles.question}
-        aria-label={speakQuestion(question)}
-      >
-        {question.displayText}
-      </h2>
-      <div role="group" aria-label="Answer choices" className={styles.choices}>
-        {question.choices.map((choice, index) => (
-          <AnswerChoice
-            key={choice}
-            value={choice}
-            shortcut={index + 1}
-            selected={choice === selectedAnswer}
-            disabled={disabled}
-            onSelect={onSelect}
-          />
-        ))}
+      <CardBand operation={question.operation}>
+        <p>
+          {totalQuestions === null
+            ? `Question ${questionNumber}`
+            : `Question ${questionNumber} of ${totalQuestions}`}
+        </p>
+      </CardBand>
+      <div className={styles.body}>
+        <h2
+          ref={headingRef}
+          tabIndex={-1}
+          className={styles.question}
+          aria-label={speakQuestion(question)}
+        >
+          {question.displayText}
+        </h2>
+        <div role="group" aria-label="Answer choices" className={styles.choices}>
+          {question.choices.map((choice, index) => (
+            <AnswerChoice
+              key={choice}
+              value={choice}
+              shortcut={index + 1}
+              selected={choice === selectedAnswer}
+              disabled={disabled}
+              onSelect={onSelect}
+            />
+          ))}
+        </div>
+        <p className={styles.hint}>Tip: press 1, 2, 3 or 4 to pick an answer.</p>
+        <Button size="large" onClick={onFlip} disabled={disabled || selectedAnswer === null}>
+          Flip Card
+        </Button>
       </div>
-      <p className={styles.hint}>Tip: press 1, 2, 3 or 4 to pick an answer.</p>
-      <Button size="large" onClick={onFlip} disabled={disabled || selectedAnswer === null}>
-        Flip Card
-      </Button>
     </div>
   );
 }

@@ -1,20 +1,39 @@
 .card {
-  padding: 1rem;
+  --edge: var(--color-primary);
+  --ink: var(--color-primary-strong);
+  padding: 0.75rem 1rem 1rem;
   border: 3px solid var(--color-primary-tint);
-  border-radius: 1rem;
+  border-top: 0.5rem solid var(--edge);
+  border-radius: var(--radius-control);
   background: var(--color-surface);
+  box-shadow: 0 0.3rem 0 rgb(26 20 70 / 12%);
   text-align: center;
+}
+
+.good {
+  --edge: var(--op-add);
+  --ink: var(--op-add-strong);
+}
+
+.warm {
+  --edge: var(--op-sub);
+  --ink: var(--op-sub-strong);
+}
+
+.sun {
+  --edge: var(--color-sun);
+  --ink: var(--color-text);
 }
 
 .label {
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .value {
   margin: 0.25rem 0 0;
-  color: var(--color-primary);
-  font-size: 2rem;
-  font-weight: 700;
+  color: var(--ink);
+  font-size: 2.25rem;
+  font-weight: 900;
   line-height: 1.2;
 }

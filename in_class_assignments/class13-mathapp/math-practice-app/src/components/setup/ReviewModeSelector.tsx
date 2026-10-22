@@ -33,9 +33,14 @@ export default function ReviewModeSelector({
             onChange={() => onChange("regular")}
           />
           <span className={styles.body}>
-            <span className={styles.label}>Regular practice</span>
-            <span className={styles.mark} aria-hidden="true">
-              {value === "regular" ? "✓ Selected" : ""}
+            <span className={styles.icon} aria-hidden="true">
+              ▶
+            </span>
+            <span className={styles.text}>
+              <span className={styles.label}>Regular practice</span>
+              <span className={styles.mark} aria-hidden="true">
+                {value === "regular" ? "✓ Selected" : ""}
+              </span>
             </span>
           </span>
         </label>
@@ -50,13 +55,18 @@ export default function ReviewModeSelector({
             onChange={() => onChange("mistake-review")}
           />
           <span className={styles.body}>
-            <span className={styles.label}>Practice my mistakes</span>
-            <span className={styles.mark} aria-hidden="true">
-              {value === "mistake-review"
-                ? "✓ Selected"
-                : reviewAvailable
-                  ? ""
-                  : "Not available yet"}
+            <span className={styles.icon} aria-hidden="true">
+              ↻
+            </span>
+            <span className={styles.text}>
+              <span className={styles.label}>Practice my mistakes</span>
+              <span className={styles.mark} aria-hidden="true">
+                {value === "mistake-review"
+                  ? "✓ Selected"
+                  : reviewAvailable
+                    ? ""
+                    : "Not available yet"}
+              </span>
             </span>
           </span>
         </label>

@@ -20,7 +20,11 @@ export default function ProgressBar({ completed, total }: ProgressBarProps) {
         aria-valuenow={completed}
         aria-valuetext={text}
       >
-        <div className={styles.fill} style={{ width: `${percent}%` }} />
+        <div className={styles.fill} style={{ width: `${percent}%` }}>
+          <span aria-hidden="true" className={styles.star}>
+            ★
+          </span>
+        </div>
       </div>
       <p className={styles.text}>{text}</p>
     </div>

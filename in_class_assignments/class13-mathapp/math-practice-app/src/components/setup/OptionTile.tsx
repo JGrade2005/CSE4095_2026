@@ -8,6 +8,8 @@ interface OptionTileProps {
   onChange: () => void;
   label: ReactNode;
   description?: string;
+  icon?: ReactNode;
+  accent?: "add" | "sub" | "mul" | "div";
 }
 
 export default function OptionTile({
@@ -17,9 +19,11 @@ export default function OptionTile({
   onChange,
   label,
   description,
+  icon,
+  accent,
 }: OptionTileProps) {
   return (
-    <label className={styles.tile}>
+    <label className={accent ? `${styles.tile} ${styles[accent]}` : styles.tile}>
       <input
         className={styles.input}
         type={type}
@@ -28,10 +32,17 @@ export default function OptionTile({
         onChange={onChange}
       />
       <span className={styles.body}>
-        <span className={styles.label}>{label}</span>
-        {description && <span className={styles.description}>{description}</span>}
-        <span className={styles.mark} aria-hidden="true">
-          {checked ? "✓ Selected" : ""}
+        {icon && (
+          <span className={styles.icon} aria-hidden="true">
+            {icon}
+          </span>
+        )}
+        <span className={styles.text}>
+          <span className={styles.label}>{label}</span>
+          {description && <span className={styles.description}>{description}</span>}
+          <span className={styles.mark} aria-hidden="true">
+            {checked ? "✓ Selected" : ""}
+          </span>
         </span>
       </span>
     </label>

@@ -88,7 +88,7 @@ export default function QuestionCard({
       : `${progress} ${speakQuestion(question)}`;
 
   return (
-    <div className={styles.card}>
+    <div className={`${styles.card} ${styles[question.operation]}`}>
       <div role="status" aria-live="polite" aria-atomic="true" className={styles.visuallyHidden}>
         {announcement}
       </div>

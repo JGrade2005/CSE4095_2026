@@ -2,6 +2,7 @@ import { useId } from "react";
 import type { SessionLength } from "../../types/session";
 import { SESSION_LENGTH_OPTIONS, formatSessionLength } from "../../utils/labels";
 import OptionTile from "./OptionTile";
+import tileStyles from "./OptionTile.module.css";
 import styles from "./SelectorGroup.module.css";
 
 interface SessionLengthSelectorProps {
@@ -28,7 +29,19 @@ export default function SessionLengthSelector({
             name={name}
             checked={value === length}
             onChange={() => onChange(length)}
-            label={formatSessionLength(length)}
+            label={
+              length === "continuous" ? (
+                formatSessionLength(length)
+              ) : (
+                <>
+                  <span className={tileStyles.bigNumber}>{length}</span>
+                  {" questions"}
+                </>
+              )
+            }
+            icon={
+              length === "continuous" ? <span className={tileStyles.bigNumber}>∞</span> : undefined
+            }
           />
         ))}
       </div>

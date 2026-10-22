@@ -3,6 +3,7 @@ import type { Question } from "../../types/question";
 import { OPERATION_SYMBOLS } from "../../utils/math";
 import { speakEquation } from "../../utils/spokenMath";
 import Button from "../common/Button";
+import CardBand from "./CardBand";
 import styles from "./CardBack.module.css";
 
 export interface CardBackProps {
@@ -30,28 +31,37 @@ export default function CardBack({
 
   return (
     <div className={styles.back}>
-      <h2 ref={headingRef} tabIndex={-1} className={styles.heading}>
-        Here is the answer
-      </h2>
-      <p className={styles.original}>Question: {question.displayText}</p>
-      <p className={styles.equation}>
-        <span aria-hidden="true">{equation}</span>
-        <span className={styles.visuallyHidden}>{speakEquation(question)}</span>
-      </p>
-      <p className={styles.yours}>Your answer: {formatNumber(selectedAnswer)}</p>
-      {explanation !== null && <p className={styles.explanation}>{explanation}</p>}
-      <div className={styles.actions}>
-        <Button size="large" disabled={resultRecorded} onClick={() => onResult(true)}>
-          I Got It Right
-        </Button>
-        <Button
-          size="large"
-          variant="secondary"
-          disabled={resultRecorded}
-          onClick={() => onResult(false)}
-        >
-          I Got It Wrong
-        </Button>
+      <CardBand operation={question.operation}>
+        <h2 ref={headingRef} tabIndex={-1}>
+          Here is the answer
+        </h2>
+      </CardBand>
+      <div className={styles.body}>
+        <p className={styles.original}>Question: {question.displayText}</p>
+        <p className={styles.equation}>
+          <span aria-hidden="true">{equation}</span>
+          <span className={styles.visuallyHidden}>{speakEquation(question)}</span>
+        </p>
+        <p className={styles.yours}>Your answer: {formatNumber(selectedAnswer)}</p>
+        {explanation !== null && <p className={styles.explanation}>{explanation}</p>}
+        <div className={styles.actions}>
+          <Button
+            size="large"
+            className={styles.right}
+            disabled={resultRecorded}
+            onClick={() => onResult(true)}
+          >
+            <span aria-hidden="true">✓</span>I Got It Right
+          </Button>
+          <Button
+            size="large"
+            variant="secondary"
+            disabled={resultRecorded}
+            onClick={() => onResult(false)}
+          >
+            <span aria-hidden="true">↺</span>I Got It Wrong
+          </Button>
+        </div>
       </div>
     </div>
   );

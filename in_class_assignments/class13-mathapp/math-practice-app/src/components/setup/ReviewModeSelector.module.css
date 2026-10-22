@@ -14,13 +14,31 @@
   composes: label from "./OptionTile.module.css";
 }
 
+.icon {
+  composes: icon from "./OptionTile.module.css";
+  color: var(--color-primary-strong);
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.text {
+  composes: text from "./OptionTile.module.css";
+}
+
 .mark {
   composes: mark from "./OptionTile.module.css";
 }
 
 .unavailable .body {
   border-style: dashed;
+  box-shadow: none;
   background: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
+}
+
+.unavailable .icon,
+.unavailable .mark {
   color: var(--color-disabled-text);
 }
 

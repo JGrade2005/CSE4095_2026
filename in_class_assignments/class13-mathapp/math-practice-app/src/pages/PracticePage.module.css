@@ -1,17 +1,19 @@
 .progress {
-  margin-bottom: 1rem;
+  max-width: 36rem;
+  margin: 0 auto 1.25rem;
 }
 
 .count {
-  margin: 0 0 1rem;
-  font-size: 1.125rem;
-  font-weight: 700;
+  margin: 0 0 1.25rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-align: center;
 }
 
 .actions {
   display: flex;
   justify-content: center;
-  margin-top: 1.5rem;
+  margin-top: 1.75rem;
 }
 
 .emptyActions {

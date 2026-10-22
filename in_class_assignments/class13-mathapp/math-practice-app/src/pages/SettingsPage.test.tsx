@@ -34,7 +34,7 @@ beforeEach(() => {
 describe("SettingsPage", () => {
   it.each([
     ["Sound effects", "soundEffectsEnabled"],
-    ["Card flip animation", "cardAnimationEnabled"],
+    ["Animations (card flip and moving background)", "cardAnimationEnabled"],
     ["Show explanations", "showExplanations"],
     ["Feedback messages", "feedbackMessagesEnabled"],
     ["Allow negative answers in Advanced subtraction", "allowNegativeSubtraction"],

@@ -75,7 +75,7 @@ export default function SettingsPage() {
         <legend className={styles.legend}>Sounds and motion</legend>
         <div className={styles.grid}>
           {renderToggle("soundEffectsEnabled", "Sound effects")}
-          {renderToggle("cardAnimationEnabled", "Card flip animation")}
+          {renderToggle("cardAnimationEnabled", "Animations (card flip and moving background)")}
         </div>
       </fieldset>
 

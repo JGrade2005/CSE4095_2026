@@ -1,7 +1,23 @@
 .header {
   position: relative;
+  padding-bottom: 0.5rem;
   background: var(--color-surface);
-  border-bottom: 4px solid var(--color-accent);
+}
+
+.header::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 0.5rem;
+  background: linear-gradient(
+    90deg,
+    var(--op-add) 0 25%,
+    var(--op-sub) 25% 50%,
+    var(--op-mul) 50% 75%,
+    var(--op-div) 75% 100%
+  );
 }
 
 .skipLink {
@@ -10,10 +26,10 @@
   left: 0.5rem;
   z-index: 20;
   padding: 0.75rem 1.25rem;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-control);
   background: var(--color-primary);
   color: var(--color-on-primary);
-  font-weight: 700;
+  font-weight: 800;
   transform: translateY(-200%);
 }
 
@@ -35,13 +51,26 @@
 .title {
   display: inline-flex;
   align-items: center;
+  gap: 0.75rem;
   min-height: 3rem;
-  color: var(--color-primary);
+  color: var(--color-primary-strong);
   font-size: 1.5rem;
-  font-weight: 800;
+  font-weight: 900;
   text-decoration: none;
 }
 
 .title:hover {
   text-decoration: underline;
+  text-decoration-thickness: 3px;
+}
+
+.logo {
+  display: inline-flex;
+  gap: 0.2rem;
+}
+
+@media (max-width: 22em) {
+  .logo {
+    display: none;
+  }
 }
