@@ -1,0 +1,39 @@
+.tile {
+  composes: tile from "./OptionTile.module.css";
+}
+
+.input {
+  composes: input from "./OptionTile.module.css";
+}
+
+.body {
+  composes: body from "./OptionTile.module.css";
+}
+
+.label {
+  composes: label from "./OptionTile.module.css";
+}
+
+.mark {
+  composes: mark from "./OptionTile.module.css";
+}
+
+.unavailable .body {
+  border-style: dashed;
+  background: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
+}
+
+.unavailable,
+.unavailable .input {
+  cursor: not-allowed;
+}
+
+.unavailable:hover .body {
+  background: var(--color-disabled-bg);
+}
+
+.info {
+  margin: 0.75rem 0 0;
+  font-weight: 700;
+}

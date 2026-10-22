@@ -145,6 +145,12 @@ describe("array validators", () => {
     expect(validateAttempts([{ ...attempt, attemptedAt: "not a date" }])).toEqual([]);
   });
 
+  it("accept an optional mistake pattern id but reject a malformed one", () => {
+    const review = { ...attempt, source: "mistake-review", mistakePatternId: "p1" };
+    expect(validateAttempts([review])).toEqual([review]);
+    expect(validateAttempts([{ ...review, mistakePatternId: 7 }])).toEqual([]);
+  });
+
   it("accept sessions with completion details and continuous length", () => {
     const done = {
       ...session,

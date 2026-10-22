@@ -1,13 +1,15 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createDefaultSettings } from "../services/defaults";
-import { saveSettings } from "../services/practiceRecords";
+import { loadSessions, saveSettings } from "../services/practiceRecords";
+import { resetStorageServiceState } from "../services/storageService";
 import { renderRoute } from "../test/renderRoute";
 
 const SETTINGS_KEY = "mathPractice.settings";
 
 beforeEach(() => {
   localStorage.clear();
+  resetStorageServiceState();
 });
 
 describe("PracticeSetupPage", () => {
@@ -45,7 +47,7 @@ describe("PracticeSetupPage", () => {
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });
 
-  it("goes to the practice page with the chosen config", async () => {
+  it("starts a session with the chosen config and opens the practice page", async () => {
     const { router } = renderRoute("/practice/setup");
     await userEvent.click(screen.getByRole("checkbox", { name: /Subtraction/ }));
     await userEvent.click(screen.getByRole("radio", { name: /Advanced/ }));
@@ -53,17 +55,17 @@ describe("PracticeSetupPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Start Session" }));
 
     expect(router.state.location.pathname).toBe("/practice/session");
-    expect(router.state.location.state).toEqual({
-      config: {
-        operations: ["addition", "subtraction"],
-        difficulty: 4,
-        sessionLength: 20,
-        mode: "regular",
-      },
+    expect(router.state.location.state).toBeNull();
+    expect(screen.getByText("Question 1 of 20")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuemax", "20");
+
+    const [session] = loadSessions();
+    expect(session).toMatchObject({
+      operations: ["addition", "subtraction"],
+      difficulty: 4,
+      sessionLength: 20,
+      attempted: 0,
     });
-    expect(screen.getByText(/Ready to practice: Addition, Subtraction,/)).toHaveTextContent(
-      "Level 4: Advanced, 20 questions",
-    );
   });
 
   it("does not change the saved defaults when options change for one session", async () => {
@@ -76,10 +78,8 @@ describe("PracticeSetupPage", () => {
     expect(localStorage.getItem(SETTINGS_KEY)).toBe(before);
   });
 
-  it("shows a set-up prompt when the practice page is opened without a session", async () => {
+  it("sends the practice page back to setup when no session was started", () => {
     const { router } = renderRoute("/practice/session");
-    expect(screen.getByText("No practice session has been set up yet.")).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Set Up Practice" }));
     expect(router.state.location.pathname).toBe("/practice/setup");
   });
 });

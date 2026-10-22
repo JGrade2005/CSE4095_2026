@@ -112,6 +112,7 @@ function isPracticeAttempt(value: unknown): value is PracticeAttempt {
     typeof value.selfReportedCorrect === "boolean" &&
     isDifficultyLevel(value.difficulty) &&
     isQuestionSource(value.source) &&
+    (value.mistakePatternId === undefined || isNonEmptyString(value.mistakePatternId)) &&
     isDateString(value.attemptedAt) &&
     isNonEmptyString(value.sessionId)
   );

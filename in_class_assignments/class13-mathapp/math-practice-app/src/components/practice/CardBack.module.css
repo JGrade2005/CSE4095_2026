@@ -1,0 +1,66 @@
+.back {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1rem;
+  text-align: center;
+}
+
+.heading {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: 1.25rem;
+}
+
+.original,
+.yours,
+.explanation {
+  margin: 0;
+}
+
+.original {
+  font-size: 1.25rem;
+}
+
+.equation {
+  margin: 0;
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.yours {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.explanation {
+  padding: 0.75rem 1rem;
+  border-left: 6px solid var(--color-primary);
+  border-radius: 0.5rem;
+  background: var(--color-primary-tint);
+  text-align: left;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.actions > * {
+  flex: 1 1 12rem;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

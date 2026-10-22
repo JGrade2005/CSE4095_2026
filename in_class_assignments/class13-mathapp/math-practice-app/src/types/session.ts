@@ -22,6 +22,7 @@ export interface PracticeAttempt {
   selfReportedCorrect: boolean;
   difficulty: DifficultyLevel;
   source: QuestionSource;
+  mistakePatternId?: string;
   attemptedAt: string;
   sessionId: string;
 }

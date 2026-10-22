@@ -1,0 +1,31 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.track {
+  height: 1rem;
+  overflow: hidden;
+  border: 3px solid var(--color-primary);
+  border-radius: 999px;
+  background: var(--color-surface);
+}
+
+.fill {
+  height: 100%;
+  background: var(--color-primary);
+}
+
+.text {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fill {
+    transition: width 0.3s ease;
+  }
+}
