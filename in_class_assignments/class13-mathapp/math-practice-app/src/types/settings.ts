@@ -9,4 +9,5 @@ export interface AppSettings {
   defaultDifficulty: DifficultyLevel;
   defaultOperations: MathOperation[];
   masteryThreshold: number;
+  allowNegativeSubtraction: boolean;
 }
