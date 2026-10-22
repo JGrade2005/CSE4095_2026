@@ -1,0 +1,102 @@
+[
+  {
+    "id": "mem_mviskfvo_4ba2lzhm",
+    "key": "auto-memory:MEMORY.md:(untitled)",
+    "content": "- [Agentic library](agentic-library.md) — user's agent guidance and session logs at ~/agenticlibrary; read before CSE4095 work\n- [No git commits](no-git-commits.md) — never commit or push; user does all git\n- [Step-by-step prompts](step-by-step-prompts.md) — user gives one Part prompt at a time; don't run ahead",
+    "type": "semantic",
+    "namespace": "auto-memory",
+    "tags": [
+      "auto-memory",
+      "MEMORY"
+    ],
+    "metadata": {
+      "sourceFile": "MEMORY.md",
+      "heading": "(untitled)",
+      "memoryDir": "/home/ajgre/.claude/projects/-home-ajgre-CSE4095-2026/memory",
+      "importedAt": "2026-10-22T00:17:16.644Z",
+      "contentHash": "37e2a7990ebee849"
+    },
+    "accessLevel": "private",
+    "createdAt": 1792628236644,
+    "updatedAt": 1792628236644,
+    "version": 1,
+    "references": [],
+    "accessCount": 0,
+    "lastAccessedAt": 1792628236644
+  },
+  {
+    "id": "mem_mviskfvq_2wbuaqh2",
+    "key": "auto-memory:agentic-library.md:agentic-library",
+    "content": "The user's agent guidance lives in `~/agenticlibrary` (they may type it as \"agentLIbrary\"). Read `README.md` and `context.md` first, then recent `sessions/<date>-<topic>/session.md` logs for the class being worked on.\n\nKey rules from context.md: brief explanations, no em dashes in any output, response format of Approach / Code / Key decisions / Complexity / Edge cases / Key lessons, no tests unless asked. The README asks for a session log at the end of each session in `sessions/`.\n\n**Why:** The user asked to refer to it for guidance and context (2026-09-25).\n**How to apply:** Read it at the start of CSE4095 tasks and write a session log when done. Related: [[cse4095-notebook-workflow]]",
+    "type": "semantic",
+    "namespace": "auto-memory",
+    "tags": [
+      "auto-memory",
+      "agentic-library"
+    ],
+    "metadata": {
+      "sourceFile": "agentic-library.md",
+      "heading": "agentic-library",
+      "memoryDir": "/home/ajgre/.claude/projects/-home-ajgre-CSE4095-2026/memory",
+      "importedAt": "2026-10-22T00:17:16.646Z",
+      "contentHash": "2274670143c22a34"
+    },
+    "accessLevel": "private",
+    "createdAt": 1792628236646,
+    "updatedAt": 1792628236646,
+    "version": 1,
+    "references": [],
+    "accessCount": 0,
+    "lastAccessedAt": 1792628236646
+  },
+  {
+    "id": "mem_mviskfvs_gu6kz0p9",
+    "key": "auto-memory:no-git-commits.md:no-git-commits",
+    "content": "Never run `git commit` or `git push` (or other git writes) in CSE4095 work. The user does all of that themselves.\n\n**Why:** Stated explicitly by the user on 2026-10-06 (Class 11 kickoff): \"Do not ever commit to github or push on your own.\"\n**How to apply:** Leave changes in the working tree. Don't offer to commit unless asked. Related: [[step-by-step-prompts]]",
+    "type": "semantic",
+    "namespace": "auto-memory",
+    "tags": [
+      "auto-memory",
+      "no-git-commits"
+    ],
+    "metadata": {
+      "sourceFile": "no-git-commits.md",
+      "heading": "no-git-commits",
+      "memoryDir": "/home/ajgre/.claude/projects/-home-ajgre-CSE4095-2026/memory",
+      "importedAt": "2026-10-22T00:17:16.648Z",
+      "contentHash": "e1281c5295df123e"
+    },
+    "accessLevel": "private",
+    "createdAt": 1792628236648,
+    "updatedAt": 1792628236648,
+    "version": 1,
+    "references": [],
+    "accessCount": 0,
+    "lastAccessedAt": 1792628236648
+  },
+  {
+    "id": "mem_mviskfvt_vh84m6a3",
+    "key": "auto-memory:step-by-step-prompts.md:step-by-step-prompts",
+    "content": "The user provides each Part's prompt themselves (from their prompt set). Do only the Part asked. Don't read ahead in ~/agenticlibrary (e.g. the stored Class 11 prompt set) and build later Parts on my own.\n\n**Why:** User said on 2026-10-06: \"I will provide future prompts for you to do, do not just read from agenticLIbrary and go ahead.\"\n**How to apply:** Finish the requested Part, report, and stop. Use the library for conventions only. Related: [[agentic-library]], [[no-git-commits]]",
+    "type": "semantic",
+    "namespace": "auto-memory",
+    "tags": [
+      "auto-memory",
+      "step-by-step-prompts"
+    ],
+    "metadata": {
+      "sourceFile": "step-by-step-prompts.md",
+      "heading": "step-by-step-prompts",
+      "memoryDir": "/home/ajgre/.claude/projects/-home-ajgre-CSE4095-2026/memory",
+      "importedAt": "2026-10-22T00:17:16.649Z",
+      "contentHash": "be2d68a067833480"
+    },
+    "accessLevel": "private",
+    "createdAt": 1792628236649,
+    "updatedAt": 1792628236649,
+    "version": 1,
+    "references": [],
+    "accessCount": 0,
+    "lastAccessedAt": 1792628236649
+  }
+]

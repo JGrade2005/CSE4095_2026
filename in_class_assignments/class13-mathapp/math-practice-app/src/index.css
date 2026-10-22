@@ -1,0 +1,47 @@
+:root {
+  --color-bg: #fff8ec;
+  --color-surface: #ffffff;
+  --color-text: #1f2340;
+  --color-primary: #3d3a9e;
+  --color-primary-hover: #2c2a7a;
+  --color-primary-tint: #e8e7fb;
+  --color-on-primary: #ffffff;
+  --color-accent: #ffc83d;
+  --color-focus: #1f2340;
+  --color-disabled-bg: #e4e2dc;
+  --color-disabled-border: #8a877e;
+  --color-disabled-text: #5b5951;
+
+  --font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Segoe UI", system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+
+h1 {
+  margin: 0 0 1rem;
+  color: var(--color-primary);
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.2;
+}
+
+p {
+  margin: 0 0 1rem;
+}
+
+:focus-visible {
+  outline: 4px solid var(--color-focus);
+  outline-offset: 3px;
+}
