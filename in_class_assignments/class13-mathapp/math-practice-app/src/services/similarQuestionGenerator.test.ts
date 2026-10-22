@@ -303,6 +303,36 @@ describe("fact families", () => {
   });
 });
 
+describe("zero and one factors", () => {
+  // These patterns used to freeze review: a nearby candidate like -2 × 7 reached the choice builder.
+  it.each([
+    [0, 7, 2],
+    [1, 9, 2],
+    [0, 9, 3],
+    [0, 0, 1],
+    [1, 1, 1],
+  ] as const)("builds valid review questions for %i × %i at level %i", (first, second, level) => {
+    for (const question of generateMany(makePattern("multiplication", first, second, level))) {
+      expect(question.firstOperand).toBeGreaterThanOrEqual(0);
+      expect(question.secondOperand).toBeGreaterThanOrEqual(0);
+      expect(actualValidateQuestion(question).valid).toBe(true);
+    }
+  });
+
+  it("builds valid review questions for small subtraction and division facts", () => {
+    for (const pattern of [
+      makePattern("subtraction", 1, 0, 1),
+      makePattern("subtraction", 0, 0, 1),
+      makePattern("division", 0, 1, 1),
+      makePattern("addition", 0, 0, 1),
+    ]) {
+      for (const question of generateMany(pattern)) {
+        expect(actualValidateQuestion(question).valid).toBe(true);
+      }
+    }
+  });
+});
+
 describe("fallbacks", () => {
   it("falls back to the original question when nothing else validates", () => {
     const pattern = makePattern("multiplication", 8, 7, 3);

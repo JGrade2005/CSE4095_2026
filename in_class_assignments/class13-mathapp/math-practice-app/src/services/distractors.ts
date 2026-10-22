@@ -19,6 +19,7 @@ export const MAX_FILLER_ATTEMPTS = 30;
 const MIN_PLAUSIBLE_DISTANCE = 10;
 const PLAUSIBLE_DISTANCE_RATIO = 0.5;
 const MAX_FILLER_OFFSET = 3;
+const MAX_PLAUSIBLE_SEARCH = 20;
 
 function additionCandidates({ correctAnswer }: ChoiceParts): number[] {
   return [
@@ -109,10 +110,21 @@ function collectDistractors(parts: ChoiceParts, allowNegative: boolean): number[
     tryAdd(correctAnswer + randomNearbyOffset());
   }
 
-  // Every answer has at least ten usable integers just above it, so this ends.
-  for (let distance = 1; chosen.size < DISTRACTOR_COUNT; distance++) {
+  for (
+    let distance = 1;
+    distance <= MAX_PLAUSIBLE_SEARCH && chosen.size < DISTRACTOR_COUNT;
+    distance++
+  ) {
     tryAdd(correctAnswer + distance);
     tryAdd(correctAnswer - distance);
+  }
+
+  // Last resort drops the plausibility limit. Counting upward always reaches non-negative
+  // integers, so this ends even for a negative answer when negatives are not allowed.
+  const limit = Math.abs(correctAnswer) + MAX_PLAUSIBLE_SEARCH;
+  for (let distance = 1; distance <= limit && chosen.size < DISTRACTOR_COUNT; distance++) {
+    const candidate = correctAnswer + distance;
+    if (allowNegative || candidate >= 0) chosen.add(candidate);
   }
 
   return [...chosen];

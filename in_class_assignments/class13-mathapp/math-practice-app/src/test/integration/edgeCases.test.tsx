@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { act, screen, within } from "@testing-library/react";
@@ -288,8 +289,8 @@ describe("generated questions", () => {
 
   it("keeps similar questions valid for patterns with a zero operand", () => {
     const zeroPatterns: MistakePattern[] = [
-      ["multiplication", 0, 5],
-      ["multiplication", 7, 0],
+      ["multiplication", 0, 3],
+      ["multiplication", 4, 0],
       ["division", 0, 4],
       ["subtraction", 5, 5],
       ["addition", 0, 0],
@@ -299,7 +300,7 @@ describe("generated questions", () => {
       firstOperand: firstOperand as number,
       secondOperand: secondOperand as number,
       correctAnswer: 0,
-      difficulty: 2,
+      difficulty: 1,
       incorrectCount: 1,
       similarCorrectCount: 0,
       lastIncorrectAt: "2026-03-01T12:00:00.000Z",
@@ -337,7 +338,9 @@ describe("very small device widths", () => {
 
   it("declares no fixed width or min-width above 320px in any stylesheet", () => {
     const offenders: string[] = [];
-    for (const file of cssFiles(join(process.cwd(), "src"))) {
+    const files = cssFiles(join(process.cwd(), "src"));
+    expect(files.length).toBeGreaterThan(10);
+    for (const file of files) {
       const css = readFileSync(file, "utf8");
       for (const match of css.matchAll(/(?<![-\w])(min-width|width)\s*:\s*([\d.]+)(px|rem)\b/g)) {
         if (toPx(Number(match[2]), match[3]) > MAX_FIXED_WIDTH_PX) {

@@ -37,6 +37,19 @@ function expectValidChoices(parts: ChoiceParts, choices: number[], allowNegative
 }
 
 describe("buildChoices", () => {
+  it("always finishes, even for a negative answer when negatives are not allowed", () => {
+    const parts: ChoiceParts = {
+      operation: "multiplication",
+      firstOperand: -2,
+      secondOperand: 7,
+      correctAnswer: -14,
+    };
+    const choices = buildChoices(parts, { allowNegative: false });
+    expect(new Set(choices).size).toBe(CHOICE_COUNT);
+    expect(choices.filter((choice) => choice === -14)).toHaveLength(1);
+    expect(choices.filter((choice) => choice !== -14).every((choice) => choice >= 0)).toBe(true);
+  });
+
   it("returns exactly 4 unique integers containing the correct answer once", () => {
     for (const operation of MATH_OPERATIONS) {
       for (let sample = 0; sample < 300; sample++) {

@@ -100,7 +100,10 @@ function fitsMultiplication(primary: number, partner: number, rule: Multiplicati
   );
 }
 
-export function isWithinLevel(question: Question, options: LevelOptions = {}): boolean {
+export function isWithinLevel(
+  question: Pick<Question, "operation" | "firstOperand" | "secondOperand" | "difficulty">,
+  options: LevelOptions = {},
+): boolean {
   const rules = DIFFICULTY_RULES[question.difficulty];
   if (!rules) {
     return false;

@@ -4,6 +4,7 @@ import { calculateAnswer } from "../utils/math";
 import { shuffle } from "../utils/shuffle";
 import { validateQuestion } from "../utils/validation";
 import { buildQuestion, generateQuestion } from "./questionGenerator";
+import { isWithinLevel } from "./difficultyRules";
 import type { LevelOptions } from "./difficultyRules";
 
 interface Candidate {
@@ -148,6 +149,8 @@ function findValidQuestion(
   options: LevelOptions,
 ): Question | undefined {
   for (const candidate of shuffle(candidates)) {
+    // Checked before building choices: an out-of-level candidate like -2 × 7 has no valid distractors.
+    if (!isWithinLevel({ ...candidate, difficulty: pattern.difficulty }, options)) continue;
     const question = toReviewQuestion(candidate, pattern, options);
     if (validateQuestion(question, options).valid) {
       return { ...question, mistakePatternId: pattern.id };
