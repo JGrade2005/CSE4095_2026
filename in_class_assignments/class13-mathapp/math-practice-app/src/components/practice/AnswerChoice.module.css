@@ -3,8 +3,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 72px;
-  padding: 0.75rem 2.5rem;
+  min-width: 0;
+  min-height: 4.5rem;
+  padding: 0.75rem 2.25rem;
   border: 3px solid var(--color-disabled-border);
   border-radius: 1rem;
   background: var(--color-surface);
@@ -43,13 +44,44 @@
   color: var(--color-disabled-text);
 }
 
+.number {
+  overflow-wrap: anywhere;
+}
+
 .mark {
   position: absolute;
   top: 50%;
-  right: 1rem;
+  right: 0.625rem;
   transform: translateY(-50%);
   color: var(--color-primary);
   font-size: 1.5rem;
+}
+
+.shortcut {
+  position: absolute;
+  top: 50%;
+  left: 0.625rem;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  transform: translateY(-50%);
+  border: 2px solid var(--color-primary);
+  border-radius: 0.375rem;
+  color: var(--color-primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.choice:disabled .shortcut {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .shortcut {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -58,5 +90,12 @@
       background-color 0.15s ease,
       transform 0.1s ease,
       filter 0.1s ease;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 32em) {
+  .choice {
+    min-height: 3.5rem;
+    font-size: 1.5rem;
   }
 }

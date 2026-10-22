@@ -1,9 +1,17 @@
 import { DIFFICULTY_LEVELS, MATH_OPERATIONS } from "../types/question";
 import type { DifficultyLevel, MathOperation, QuestionSource } from "../types/question";
 import type { MistakePattern } from "../types/mistake";
-import type { PracticeAttempt, PracticeSession, SessionLength } from "../types/session";
+import type { PracticeState } from "../types/practice";
+import type { Question } from "../types/question";
+import type {
+  PracticeAttempt,
+  PracticeSession,
+  SessionConfig,
+  SessionLength,
+} from "../types/session";
 import type { AppSettings } from "../types/settings";
 import type { AppStatistics, OperationStatistics } from "../types/statistics";
+import { validateQuestion } from "../utils/validation";
 import { createDefaultSettings, createEmptyStatistics } from "./defaults";
 
 type UnknownRecord = Record<string, unknown>;
@@ -189,4 +197,70 @@ export interface VersionRecord {
 // A missing or unreadable version counts as 0 so the migrations run from the start.
 export function validateVersionRecord(raw: unknown): VersionRecord {
   return { version: isRecord(raw) && isNonNegativeInteger(raw.version) ? raw.version : 0 };
+}
+
+function isSessionConfig(value: unknown): value is SessionConfig {
+  return (
+    isRecord(value) &&
+    isOperationList(value.operations) &&
+    isDifficultyLevel(value.difficulty) &&
+    isSessionLength(value.sessionLength) &&
+    (value.mode === "regular" || value.mode === "mistake-review")
+  );
+}
+
+function hasQuestionShape(value: unknown): value is Question {
+  return (
+    isRecord(value) &&
+    isNonEmptyString(value.id) &&
+    isMathOperation(value.operation) &&
+    isFiniteNumber(value.firstOperand) &&
+    isFiniteNumber(value.secondOperand) &&
+    typeof value.displayText === "string" &&
+    isFiniteNumber(value.correctAnswer) &&
+    Array.isArray(value.choices) &&
+    value.choices.every(isFiniteNumber) &&
+    isDifficultyLevel(value.difficulty) &&
+    isQuestionSource(value.source) &&
+    (value.mistakePatternId === undefined || isNonEmptyString(value.mistakePatternId))
+  );
+}
+
+function isRestorableQuestion(value: unknown): value is Question {
+  // The negative-subtraction setting may have changed since the question was made.
+  return (
+    hasQuestionShape(value) && validateQuestion(value, { allowNegativeSubtraction: true }).valid
+  );
+}
+
+function isActiveState(value: unknown): value is PracticeState {
+  if (!isRecord(value) || value.status !== "active") return false;
+  if (!isSessionConfig(value.config) || !isPracticeSession(value.session)) return false;
+  if (value.session.completedAt !== undefined || !isRestorableQuestion(value.currentQuestion)) {
+    return false;
+  }
+  const { selectedAnswer, isCardFlipped, isResultRecorded, currentQuestionIndex } = value;
+  const answerIsValid =
+    selectedAnswer === null ||
+    (isFiniteNumber(selectedAnswer) && value.currentQuestion.choices.includes(selectedAnswer));
+  if (!answerIsValid || typeof isCardFlipped !== "boolean") return false;
+  if (typeof isResultRecorded !== "boolean" || !isNonNegativeInteger(currentQuestionIndex)) {
+    return false;
+  }
+  if (!isNonNegativeInteger(value.reviewQuestionsCompleted)) return false;
+  if (
+    value.lastResult !== null &&
+    value.lastResult !== "correct" &&
+    value.lastResult !== "incorrect"
+  ) {
+    return false;
+  }
+  if ((isCardFlipped || isResultRecorded) && selectedAnswer === null) return false;
+  if (isResultRecorded && (!isCardFlipped || value.lastResult === null)) return false;
+  return value.session.attempted === currentQuestionIndex + (isResultRecorded ? 1 : 0);
+}
+
+// Anything that is not a fully consistent in-progress session is dropped rather than repaired.
+export function validateActiveSession(raw: unknown): PracticeState | null {
+  return isActiveState(raw) ? raw : null;
 }

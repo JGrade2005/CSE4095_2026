@@ -14,6 +14,17 @@ interface Candidate {
 
 type Strategy = (pattern: MistakePattern) => Candidate[];
 
+export interface SimilarQuestionOptions extends LevelOptions {
+  allowedOperations?: readonly MathOperation[];
+}
+
+const INVERSE_OPERATIONS: Record<MathOperation, MathOperation> = {
+  addition: "subtraction",
+  subtraction: "addition",
+  multiplication: "division",
+  division: "multiplication",
+};
+
 const NEARBY_OFFSETS = [-2, -1, 1, 2];
 
 function divisionCandidate(divisor: number, quotient: number): Candidate {
@@ -93,8 +104,15 @@ const INVERSE_STRATEGIES: Record<MathOperation, Strategy> = {
 // Reversing subtraction or division changes the problem, so only commutative operations reverse.
 const COMMUTATIVE_OPERATIONS: MathOperation[] = ["addition", "multiplication"];
 
-function applicableStrategies(operation: MathOperation): Strategy[] {
-  const strategies = [nearbyNumbers, INVERSE_STRATEGIES[operation]];
+// The inverse fact family switches operation, so it is only used when the child chose that operation too.
+function applicableStrategies(
+  operation: MathOperation,
+  allowedOperations?: readonly MathOperation[],
+): Strategy[] {
+  const strategies = [nearbyNumbers];
+  if (!allowedOperations || allowedOperations.includes(INVERSE_OPERATIONS[operation])) {
+    strategies.push(INVERSE_STRATEGIES[operation]);
+  }
   if (COMMUTATIVE_OPERATIONS.includes(operation)) {
     strategies.push(reversedOperands);
   }
@@ -152,8 +170,11 @@ function hasWholeAnswer(candidate: Candidate): boolean {
   );
 }
 
-function buildCandidateGroups(pattern: MistakePattern): Candidate[][] {
-  return shuffle(applicableStrategies(pattern.operation)).map((strategy) =>
+function buildCandidateGroups(
+  pattern: MistakePattern,
+  allowedOperations?: readonly MathOperation[],
+): Candidate[][] {
+  return shuffle(applicableStrategies(pattern.operation, allowedOperations)).map((strategy) =>
     strategy(pattern).filter(
       (candidate) => hasWholeAnswer(candidate) && !isSameQuestion(candidate, pattern),
     ),
@@ -162,9 +183,9 @@ function buildCandidateGroups(pattern: MistakePattern): Candidate[][] {
 
 export function generateSimilarQuestion(
   pattern: MistakePattern,
-  options: LevelOptions = {},
+  options: SimilarQuestionOptions = {},
 ): Question {
-  for (const group of buildCandidateGroups(pattern)) {
+  for (const group of buildCandidateGroups(pattern, options.allowedOperations)) {
     const question = findValidQuestion(group, pattern, options);
     if (question) {
       return question;

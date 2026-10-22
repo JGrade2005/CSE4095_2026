@@ -15,9 +15,10 @@
 
 .question {
   margin: 0;
-  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-size: clamp(2rem, 9vw, 4rem);
   font-weight: 800;
   line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 
 .choices {
@@ -26,8 +27,34 @@
   gap: 1rem;
 }
 
-@media (max-width: 480px) {
+.hint {
+  margin: 0;
+  font-size: 1rem;
+}
+
+@media (max-width: 25em) {
   .choices {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (pointer: coarse) {
+  .hint {
+    display: none;
+  }
+}
+
+/* Short landscape screens: keep the choices and Flip Card within easy reach. */
+@media (orientation: landscape) and (max-height: 32em) {
+  .front {
+    gap: 0.75rem;
+  }
+
+  .question {
+    font-size: 2rem;
+  }
+
+  .choices {
+    gap: 0.5rem;
   }
 }

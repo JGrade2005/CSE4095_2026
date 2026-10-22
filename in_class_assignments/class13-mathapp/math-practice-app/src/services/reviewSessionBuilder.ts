@@ -42,5 +42,7 @@ export function buildReviewQuestion(
 ): Question | null {
   const reviewable = getReviewablePatterns(patterns, config.operations, config.difficulty);
   const pattern = pickReviewPattern(reviewable, now, threshold, previousPatternId);
-  return pattern ? generateSimilarQuestion(pattern, options) : null;
+  return pattern
+    ? generateSimilarQuestion(pattern, { ...options, allowedOperations: config.operations })
+    : null;
 }

@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { loadAttempts } from "../services/practiceRecords";
 import { renderRoute } from "../test/renderRoute";
@@ -101,8 +101,10 @@ describe("SessionSummaryPage with a finished session", () => {
     expect(router.state.location.pathname).toBe("/practice/setup");
 
     await router.navigate("/practice/summary");
+    // Loading the lazy route needs real I/O, which fake timers cannot wait for; warm the cache first.
+    await import("./StatisticsPage");
     await user.click(await screen.findByRole("button", { name: "View Statistics" }));
-    expect(router.state.location.pathname).toBe("/statistics");
+    await waitFor(() => expect(router.state.location.pathname).toBe("/statistics"));
 
     await router.navigate("/practice/summary");
     await user.click(await screen.findByRole("button", { name: "Return Home" }));

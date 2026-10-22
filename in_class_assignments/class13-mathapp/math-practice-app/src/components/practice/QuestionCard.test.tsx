@@ -92,9 +92,9 @@ describe("QuestionCard", () => {
     for (const button of choiceButtons) expect(button).toBeDisabled();
   });
 
-  it("has an empty live region before flipping and announces the answer after", () => {
+  it("announces the question before flipping and the answer after", () => {
     const { rerender } = render(<QuestionCard {...props()} />);
-    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+    expect(screen.getByRole("status")).toHaveTextContent("Question 1 of 10. What is 7 times 8?");
 
     rerender(<QuestionCard {...props({ isFlipped: true })} />);
     expect(screen.getByRole("status")).toHaveTextContent("The answer is 56. You picked 54.");
@@ -126,7 +126,7 @@ describe("QuestionCard", () => {
     );
     expect(screen.getByRole("heading", { name: "What is 9 plus 4?" })).toHaveFocus();
     expect(screen.getByText("Question 2 of 10")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+    expect(screen.getByRole("status")).toHaveTextContent("Question 2 of 10. What is 9 plus 4?");
   });
 
   it("passes selection and flip events through", async () => {

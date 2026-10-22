@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
-import { Navigate } from "react-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useBlocker, useNavigate } from "react-router";
+import type { BlockerFunction } from "react-router";
 import { paths } from "../app/paths";
 import Button from "../components/common/Button";
 import ConfirmDialog from "../components/common/ConfirmDialog";
+import EmptyState from "../components/common/EmptyState";
+import FeedbackMessage from "../components/practice/FeedbackMessage";
 import ProgressBar from "../components/practice/ProgressBar";
 import QuestionCard from "../components/practice/QuestionCard";
 import { usePracticeSession } from "../hooks/usePracticeSession";
@@ -17,10 +20,32 @@ export default function PracticePage() {
   const { settings } = useSettings();
   const { state, selectAnswer, flipCard, recordResult, nextQuestion, endSession } =
     usePracticeSession();
+  const navigate = useNavigate();
   const [confirmingEnd, setConfirmingEnd] = useState(false);
+  const leavingRef = useRef(false);
 
-  const { status, isResultRecorded } = state;
+  const { status, isResultRecorded, currentQuestion } = state;
   const animate = settings.cardAnimationEnabled;
+  const showExplanations = settings.showExplanations;
+
+  const shouldBlock = useCallback<BlockerFunction>(
+    ({ currentLocation, nextLocation }) =>
+      status === "active" && currentLocation.pathname !== nextLocation.pathname,
+    [status],
+  );
+  const blocker = useBlocker(shouldBlock);
+
+  // Declared after useBlocker so its effect re-registers the blocker for the new status first.
+  useEffect(() => {
+    if (status === "complete" && !leavingRef.current) {
+      navigate(paths.practiceSummary, { replace: true });
+    }
+  }, [status, navigate]);
+
+  const explanation = useMemo(
+    () => (showExplanations && currentQuestion ? explainQuestion(currentQuestion) : null),
+    [showExplanations, currentQuestion],
+  );
 
   useEffect(() => {
     if (status !== "active" || !isResultRecorded) return;
@@ -31,13 +56,29 @@ export default function PracticePage() {
     return () => clearTimeout(timer);
   }, [status, isResultRecorded, animate, nextQuestion]);
 
-  const { session, currentQuestion } = state;
+  const { session } = state;
   if (status === "idle" || !session || !currentQuestion) {
-    return <Navigate to={paths.practiceSetup} replace />;
+    return (
+      <>
+        <h1>Practice</h1>
+        <EmptyState
+          title="No practice session is running."
+          message="Pick what you want to practice and start a new session."
+          action={
+            <div className={styles.emptyActions}>
+              <Button size="large" onClick={() => navigate(paths.practiceSetup)}>
+                Set Up Practice
+              </Button>
+              <Button variant="secondary" size="large" onClick={() => navigate(paths.home)}>
+                Return Home
+              </Button>
+            </div>
+          }
+        />
+      </>
+    );
   }
-  if (status === "complete") {
-    return <Navigate to={paths.practiceSummary} replace />;
-  }
+  if (status === "complete") return null;
 
   const total = session.sessionLength === "continuous" ? null : session.sessionLength;
   const answered = session.attempted;
@@ -59,11 +100,16 @@ export default function PracticePage() {
         selectedAnswer={state.selectedAnswer}
         isFlipped={state.isCardFlipped}
         resultRecorded={isResultRecorded}
-        explanation={settings.showExplanations ? explainQuestion(currentQuestion) : null}
+        explanation={explanation}
         animate={animate}
         onSelect={selectAnswer}
         onFlip={flipCard}
         onResult={recordResult}
+      />
+      <FeedbackMessage
+        result={state.lastResult}
+        attemptNumber={answered}
+        enabled={settings.feedbackMessagesEnabled}
       />
       {total === null && (
         <div className={styles.actions}>
@@ -82,6 +128,20 @@ export default function PracticePage() {
         onConfirm={() => {
           setConfirmingEnd(false);
           // The "complete" status redirects to the summary on the next render.
+          endSession();
+        }}
+      />
+      <ConfirmDialog
+        open={blocker.state === "blocked"}
+        title="Leave practice?"
+        message="Your session is still going. If you leave now, it will end and your answers so far are saved."
+        confirmLabel="Leave and end session"
+        cancelLabel="Keep practicing"
+        onCancel={() => blocker.reset?.()}
+        onConfirm={() => {
+          // Leaving first and ending second keeps the page's own redirect to the summary out of the way.
+          leavingRef.current = true;
+          blocker.proceed?.();
           endSession();
         }}
       />

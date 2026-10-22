@@ -21,13 +21,25 @@
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
+  overflow-wrap: break-word;
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-family);
   font-size: 1.125rem;
   line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  overflow-wrap: anywhere;
 }
 
 h1 {

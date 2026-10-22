@@ -42,16 +42,18 @@ export default function CardFront({
         {question.displayText}
       </h2>
       <div role="group" aria-label="Answer choices" className={styles.choices}>
-        {question.choices.map((choice) => (
+        {question.choices.map((choice, index) => (
           <AnswerChoice
             key={choice}
             value={choice}
+            shortcut={index + 1}
             selected={choice === selectedAnswer}
             disabled={disabled}
             onSelect={onSelect}
           />
         ))}
       </div>
+      <p className={styles.hint}>Tip: press 1, 2, 3 or 4 to pick an answer.</p>
       <Button size="large" onClick={onFlip} disabled={disabled || selectedAnswer === null}>
         Flip Card
       </Button>

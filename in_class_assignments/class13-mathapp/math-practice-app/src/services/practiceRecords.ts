@@ -1,3 +1,4 @@
+import { loadActiveSession } from "./activeSessionStore";
 import { createDefaultSettings, createEmptyStatistics } from "./defaults";
 import { runMigrations } from "./migrations";
 import { STORAGE_KEYS } from "./storageKeys";
@@ -84,5 +85,6 @@ export function initializeStorage(): StorageStatus {
   loadAttempts();
   loadStatistics();
   loadMistakePatterns();
+  loadActiveSession();
   return getStorageStatus();
 }

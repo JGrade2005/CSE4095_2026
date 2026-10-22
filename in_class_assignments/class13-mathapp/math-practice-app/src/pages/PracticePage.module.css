@@ -14,8 +14,16 @@
   margin-top: 1.5rem;
 }
 
+.emptyActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
 @media (max-width: 600px) {
-  .actions {
+  .actions,
+  .emptyActions {
     flex-direction: column;
     align-items: stretch;
   }

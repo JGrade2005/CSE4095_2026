@@ -7,6 +7,7 @@ export const STORAGE_KEYS = {
   mistakePatterns: "mathPractice.mistakePatterns",
   statistics: "mathPractice.statistics",
   version: "mathPractice.version",
+  activeSession: "mathPractice.activeSession",
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];

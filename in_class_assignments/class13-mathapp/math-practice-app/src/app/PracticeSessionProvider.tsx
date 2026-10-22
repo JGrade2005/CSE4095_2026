@@ -1,6 +1,11 @@
-import { useCallback, useMemo, useReducer, useRef } from "react";
+import { useCallback, useMemo, useReducer, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useSettings } from "../hooks/useSettings";
+import {
+  clearActiveSession,
+  loadActiveSession,
+  saveActiveSession,
+} from "../services/activeSessionStore";
 import { applyReviewResult } from "../services/mastery";
 import { recordIncorrectAnswer } from "../services/mistakeService";
 import {
@@ -27,6 +32,16 @@ import { createId } from "../utils/ids";
 import { PracticeSessionContext } from "./practiceSessionContext";
 
 const MAX_REPEAT_RETRIES = 10;
+
+function loadInitialState(): PracticeState {
+  return loadActiveSession() ?? initialPracticeState;
+}
+
+// Only an in-progress session is worth restoring after a refresh.
+function persistActiveSession(state: PracticeState): void {
+  if (state.status === "active") saveActiveSession(state);
+  else clearActiveSession();
+}
 
 function isSameQuestion(a: Question, b: Question | null): boolean {
   return (
@@ -63,12 +78,15 @@ function buildAttempt(
 
 export default function PracticeSessionProvider({ children }: { children: ReactNode }) {
   const { settings } = useSettings();
-  const [state, rawDispatch] = useReducer(practiceReducer, initialPracticeState);
+  const [initialState] = useState(loadInitialState);
+  const [state, rawDispatch] = useReducer(practiceReducer, initialState);
   // The ref updates synchronously so a second call in the same tick sees the first one's result.
-  const stateRef = useRef<PracticeState>(initialPracticeState);
+  const stateRef = useRef<PracticeState>(initialState);
 
   const dispatch = useCallback((action: PracticeAction): PracticeState => {
-    stateRef.current = practiceReducer(stateRef.current, action);
+    const next = practiceReducer(stateRef.current, action);
+    if (next !== stateRef.current) persistActiveSession(next);
+    stateRef.current = next;
     rawDispatch(action);
     return stateRef.current;
   }, []);

@@ -4,7 +4,6 @@ import {
   clearAllAppData,
   clearCategory,
   getStorageStatus,
-  isStorageAvailable,
   readCategory,
   resetStorageServiceState,
   writeCategory,
@@ -118,13 +117,6 @@ describe("storageService", () => {
         ok: false,
         error: "unavailable",
       });
-      expect(getStorageStatus().available).toBe(false);
-    });
-
-    it("isStorageAvailable is true for working storage and false when blocked", () => {
-      expect(isStorageAvailable()).toBe(true);
-      denyStorage("setItem");
-      expect(isStorageAvailable()).toBe(false);
       expect(getStorageStatus().available).toBe(false);
     });
   });

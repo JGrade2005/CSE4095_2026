@@ -265,6 +265,26 @@ describe("fact families", () => {
     expect(texts.has("8 + 7 = ?")).toBe(true);
   });
 
+  it("skips the inverse operation when it is not among the allowed operations", () => {
+    const additionOnly = generateMany(makePattern("addition", 8, 7, 2), 400, {
+      allowedOperations: ["addition"],
+    });
+    const multiplicationOnly = generateMany(makePattern("multiplication", 8, 7, 3), 400, {
+      allowedOperations: ["multiplication"],
+    });
+    expect(additionOnly.every((question) => question.operation === "addition")).toBe(true);
+    expect(multiplicationOnly.every((question) => question.operation === "multiplication")).toBe(
+      true,
+    );
+  });
+
+  it("still uses the inverse operation when it is allowed", () => {
+    const questions = generateMany(makePattern("addition", 8, 7, 2), 400, {
+      allowedOperations: ["addition", "subtraction"],
+    });
+    expect(questions.some((question) => question.operation === "subtraction")).toBe(true);
+  });
+
   it("drops fact-family questions that fall outside the level", () => {
     const questions = generateMany(makePattern("multiplication", 7, 45, 3), 200);
     for (const question of questions) {

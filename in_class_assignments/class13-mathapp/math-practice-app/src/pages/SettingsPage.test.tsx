@@ -15,6 +15,13 @@ function appKeys(): string[] {
   return Object.keys(localStorage).filter((key) => key.startsWith("mathPractice."));
 }
 
+// The Settings route is lazy-loaded, so wait for the page before using it.
+async function renderSettings() {
+  const view = renderRoute("/settings");
+  await screen.findByRole("heading", { level: 1, name: "Settings" }, { timeout: 5000 });
+  return view;
+}
+
 beforeEach(() => {
   localStorage.clear();
 });
@@ -27,7 +34,7 @@ describe("SettingsPage", () => {
     ["Feedback messages", "feedbackMessagesEnabled"],
     ["Allow negative answers in Advanced subtraction", "allowNegativeSubtraction"],
   ] as const)("saves the %s toggle immediately", async (name, key) => {
-    renderRoute("/settings");
+    await renderSettings();
     const before = createDefaultSettings()[key];
     const toggle = screen.getByRole("checkbox", { name });
     await userEvent.click(toggle);
@@ -38,7 +45,7 @@ describe("SettingsPage", () => {
   });
 
   it("saves the default difficulty and session length", async () => {
-    renderRoute("/settings");
+    await renderSettings();
     const difficulty = screen.getByRole("group", { name: "Default difficulty" });
     await userEvent.click(within(difficulty).getByRole("radio", { name: /Advanced/ }));
     const length = screen.getByRole("group", { name: "Default session length" });
@@ -48,7 +55,7 @@ describe("SettingsPage", () => {
   });
 
   it("saves default operations in standard order", async () => {
-    renderRoute("/settings");
+    await renderSettings();
     const group = screen.getByRole("group", { name: "Default operations" });
     await userEvent.click(within(group).getByRole("checkbox", { name: /Division/ }));
     await userEvent.click(within(group).getByRole("checkbox", { name: /Subtraction/ }));
@@ -56,7 +63,7 @@ describe("SettingsPage", () => {
   });
 
   it("saves the mastery threshold", async () => {
-    renderRoute("/settings");
+    await renderSettings();
     await userEvent.selectOptions(
       screen.getByLabelText("Correct similar answers needed to master a mistake"),
       "5",
@@ -65,7 +72,7 @@ describe("SettingsPage", () => {
   });
 
   it("shows a changed default difficulty on the Setup page", async () => {
-    const { router } = renderRoute("/settings");
+    const { router } = await renderSettings();
     const difficulty = screen.getByRole("group", { name: "Default difficulty" });
     await userEvent.click(within(difficulty).getByRole("radio", { name: /Intermediate/ }));
     await router.navigate("/practice/setup");
@@ -73,7 +80,7 @@ describe("SettingsPage", () => {
   });
 
   it("does not save an empty default operation list", async () => {
-    renderRoute("/settings");
+    await renderSettings();
     const group = screen.getByRole("group", { name: "Default operations" });
     await userEvent.click(within(group).getByRole("checkbox", { name: /Addition/ }));
     expect(
@@ -84,8 +91,8 @@ describe("SettingsPage", () => {
     expect(storedSettings().defaultOperations).toEqual(["division"]);
   });
 
-  it("explains where progress is stored", () => {
-    renderRoute("/settings");
+  it("explains where progress is stored", async () => {
+    await renderSettings();
     expect(
       screen.getByText(
         "Your progress is saved only in this browser on this device. Clearing your browser data may erase your progress.",
@@ -113,7 +120,7 @@ describe("SettingsPage", () => {
 
     it("asks for confirmation and keeps everything on Cancel", async () => {
       seedData();
-      const { router } = renderRoute("/settings");
+      const { router } = await renderSettings();
       await userEvent.click(screen.getByRole("button", { name: "Clear All Application Data" }));
       const dialog = screen.getByRole("alertdialog", { name: "Erase everything?" });
       expect(dialog).toHaveTextContent(
@@ -128,7 +135,7 @@ describe("SettingsPage", () => {
 
     it("erases data, restores defaults and returns Home on Confirm", async () => {
       seedData();
-      const { router } = renderRoute("/settings");
+      const { router } = await renderSettings();
       await userEvent.click(screen.getByRole("button", { name: "Clear All Application Data" }));
       await userEvent.click(screen.getByRole("button", { name: "Yes, erase everything" }));
 

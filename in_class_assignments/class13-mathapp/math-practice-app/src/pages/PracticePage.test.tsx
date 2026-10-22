@@ -31,10 +31,24 @@ afterEach(() => {
 });
 
 describe("PracticePage", () => {
-  it("redirects to setup when no session has been started", () => {
-    const { router } = renderRoute("/practice/session");
-    expect(router.state.location.pathname).toBe("/practice/setup");
-    expect(screen.getByRole("heading", { level: 1, name: "Practice Setup" })).toBeInTheDocument();
+  describe("with no session running", () => {
+    it("explains the problem instead of redirecting", () => {
+      const { router } = renderRoute("/practice/session");
+      expect(router.state.location.pathname).toBe("/practice/session");
+      expect(
+        screen.getByRole("heading", { name: "No practice session is running." }),
+      ).toBeInTheDocument();
+    });
+
+    it("offers a way to set up practice and a way home", async () => {
+      const { router } = renderRoute("/practice/session");
+      await user.click(screen.getByRole("button", { name: "Set Up Practice" }));
+      expect(router.state.location.pathname).toBe("/practice/setup");
+
+      await act(() => router.navigate("/practice/session"));
+      await user.click(screen.getByRole("button", { name: "Return Home" }));
+      expect(router.state.location.pathname).toBe("/");
+    });
   });
 
   it("shows question 1 of 5 with a progress bar after starting from setup", async () => {

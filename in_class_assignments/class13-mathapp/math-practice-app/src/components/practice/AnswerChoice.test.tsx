@@ -32,4 +32,24 @@ describe("AnswerChoice", () => {
     await userEvent.click(button);
     expect(onSelect).not.toHaveBeenCalled();
   });
+
+  it("shows a hidden shortcut number without changing the accessible name", () => {
+    render(
+      <AnswerChoice
+        value={56}
+        selected={false}
+        disabled={false}
+        onSelect={() => {}}
+        shortcut={2}
+      />,
+    );
+    const button = screen.getByRole("button", { name: "56" });
+    expect(button).toHaveAttribute("aria-keyshortcuts", "2");
+    expect(button).toHaveTextContent("256");
+  });
+
+  it("speaks negative values as minus", () => {
+    render(<AnswerChoice value={-3} selected={false} disabled={false} onSelect={() => {}} />);
+    expect(screen.getByRole("button", { name: "minus 3" })).toBeInTheDocument();
+  });
 });

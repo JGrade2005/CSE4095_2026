@@ -1,0 +1,46 @@
+.slot {
+  min-height: 3.5rem;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.message {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.5rem 1.25rem;
+  border: 3px solid var(--color-primary);
+  border-radius: 999px;
+  background: var(--color-primary-tint);
+  color: var(--color-primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.supportive {
+  border-style: dashed;
+}
+
+.icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .message {
+    animation: pop-in 0.25s ease-out;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

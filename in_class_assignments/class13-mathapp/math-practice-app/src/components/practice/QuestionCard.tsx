@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import type { Question } from "../../types/question";
-import { speakNumber } from "../../utils/spokenMath";
+import { useAnswerShortcuts } from "../../hooks/useAnswerShortcuts";
+import { usePrefersReducedMotion } from "../../hooks/usePrefersReducedMotion";
+import { speakNumber, speakQuestion } from "../../utils/spokenMath";
 import CardBack from "./CardBack";
 import CardFront from "./CardFront";
 import styles from "./QuestionCard.module.css";
@@ -35,6 +37,10 @@ export default function QuestionCard({
   const frontHeadingRef = useRef<HTMLHeadingElement>(null);
   const backHeadingRef = useRef<HTMLHeadingElement>(null);
   const previous = useRef({ id: question.id, flipped: isFlipped });
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const flipAnimation = animate && !prefersReducedMotion;
+
+  useAnswerShortcuts({ choices: question.choices, enabled: !isFlipped, onSelect });
 
   // Focus is left alone on first mount so the page can decide where keyboard users start.
   useEffect(() => {
@@ -72,17 +78,21 @@ export default function QuestionCard({
       />
     );
 
+  const progress =
+    totalQuestions === null
+      ? `Question ${questionNumber}.`
+      : `Question ${questionNumber} of ${totalQuestions}.`;
   const announcement =
     isFlipped && selectedAnswer !== null
       ? `The answer is ${speakNumber(question.correctAnswer)}. You picked ${speakNumber(selectedAnswer)}.`
-      : "";
+      : `${progress} ${speakQuestion(question)}`;
 
   return (
     <div className={styles.card}>
-      <div role="status" className={styles.visuallyHidden}>
+      <div role="status" aria-live="polite" aria-atomic="true" className={styles.visuallyHidden}>
         {announcement}
       </div>
-      {animate ? (
+      {flipAnimation ? (
         <div className={styles.scene}>
           <div className={`${styles.inner} ${isFlipped ? styles.flipped : ""}`}>
             <div

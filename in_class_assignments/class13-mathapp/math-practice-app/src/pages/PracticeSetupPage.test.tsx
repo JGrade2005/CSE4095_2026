@@ -78,8 +78,10 @@ describe("PracticeSetupPage", () => {
     expect(localStorage.getItem(SETTINGS_KEY)).toBe(before);
   });
 
-  it("sends the practice page back to setup when no session was started", () => {
-    const { router } = renderRoute("/practice/session");
-    expect(router.state.location.pathname).toBe("/practice/setup");
+  it("tells the user when the practice page is opened without a session", () => {
+    renderRoute("/practice/session");
+    expect(
+      screen.getByRole("heading", { name: "No practice session is running." }),
+    ).toBeInTheDocument();
   });
 });

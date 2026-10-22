@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { paths } from "../app/paths";
 import Button from "../components/common/Button";
@@ -22,7 +22,10 @@ export default function PracticeSetupPage() {
   const [sessionLength, setSessionLength] = useState(settings.defaultSessionLength);
   const [mode, setMode] = useState<PracticeMode>("regular");
 
-  const reviewableCount = getReviewableCount(operations, difficulty);
+  const reviewableCount = useMemo(
+    () => getReviewableCount(operations, difficulty),
+    [getReviewableCount, operations, difficulty],
+  );
   const effectiveMode: PracticeMode = reviewableCount > 0 ? mode : "regular";
   const canStart = operations.length > 0 && DIFFICULTY_LEVELS.includes(difficulty);
 

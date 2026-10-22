@@ -7,24 +7,41 @@ export type WriteError = "unavailable" | "quota" | "unknown";
 export type WriteResult = { ok: true } | { ok: false; error: WriteError };
 export type StorageStatus = { available: boolean; quotaExceeded: boolean };
 
-const PROBE_KEY = `${STORAGE_PREFIX}storageProbe`;
-
 // Spec 11: when the browser refuses storage, the current session keeps working from memory.
 const memoryStore = new Map<string, string>();
 // Keys whose latest value lives only in memory because a write to localStorage failed.
 const memoryOnlyKeys = new Set<string>();
 let useMemoryOnly = false;
 let status: StorageStatus = { available: true, quotaExceeded: false };
+const statusListeners = new Set<() => void>();
 
 export function getStorageStatus(): StorageStatus {
   return { ...status };
+}
+
+// `status` is only ever replaced, never mutated, so this stays referentially stable between changes.
+export function getStorageStatusSnapshot(): StorageStatus {
+  return status;
+}
+
+export function subscribeStorageStatus(listener: () => void): () => void {
+  statusListeners.add(listener);
+  return () => {
+    statusListeners.delete(listener);
+  };
+}
+
+function setStatus(next: StorageStatus): void {
+  if (next.available === status.available && next.quotaExceeded === status.quotaExceeded) return;
+  status = next;
+  statusListeners.forEach((listener) => listener());
 }
 
 export function resetStorageServiceState(): void {
   memoryStore.clear();
   memoryOnlyKeys.clear();
   useMemoryOnly = false;
-  status = { available: true, quotaExceeded: false };
+  setStatus({ available: true, quotaExceeded: false });
 }
 
 function getLocalStorage(): Storage | null {
@@ -37,30 +54,13 @@ function getLocalStorage(): Storage | null {
 
 function markUnavailable(): void {
   useMemoryOnly = true;
-  status = { ...status, available: false };
+  setStatus({ ...status, available: false });
 }
 
 function isQuotaError(error: unknown): boolean {
   return (
     error instanceof DOMException && (error.name === "QuotaExceededError" || error.code === 22)
   );
-}
-
-export function isStorageAvailable(): boolean {
-  const storage = getLocalStorage();
-  if (!storage) {
-    markUnavailable();
-    return false;
-  }
-  try {
-    storage.setItem(PROBE_KEY, "1");
-    storage.removeItem(PROBE_KEY);
-    return true;
-  } catch (error) {
-    if (isQuotaError(error)) return true;
-    markUnavailable();
-    return false;
-  }
 }
 
 type RawRead = { raw: string | null; available: boolean };
@@ -103,11 +103,11 @@ function writeRaw(key: string, raw: string): WriteResult {
 
 function failedWrite(error: unknown): WriteResult {
   if (isQuotaError(error)) {
-    status = { ...status, quotaExceeded: true };
+    setStatus({ ...status, quotaExceeded: true });
     return { ok: false, error: "quota" };
   }
   if (error instanceof DOMException) {
-    status = { ...status, available: false };
+    setStatus({ ...status, available: false });
     return { ok: false, error: "unavailable" };
   }
   return { ok: false, error: "unknown" };
@@ -204,4 +204,15 @@ function removeKeys(keys: string[]): void {
 
 export function clearAllAppData(): void {
   removeKeys(listAppKeys(getLocalStorage()));
+}
+
+// Approximates browser quota accounting: localStorage stores UTF-16, so two bytes per character.
+export function getStorageUsageBytes(): number {
+  const storage = getLocalStorage();
+  let total = 0;
+  for (const key of listAppKeys(storage)) {
+    const { raw } = readRaw(key);
+    if (raw !== null) total += (key.length + raw.length) * 2;
+  }
+  return total;
 }

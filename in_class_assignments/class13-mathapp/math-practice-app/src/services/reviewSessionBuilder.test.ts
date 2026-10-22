@@ -88,6 +88,26 @@ describe("buildReviewQuestion", () => {
     }
   });
 
+  it("keeps review questions inside the selected operations", () => {
+    for (let index = 0; index < 100; index++) {
+      const question = buildReviewQuestion(multiplicationPatterns, config, now, THRESHOLD);
+      expect(question?.operation).toBe("multiplication");
+    }
+  });
+
+  it("allows fact-family division when division is also selected", () => {
+    const withDivision = {
+      ...config,
+      operations: ["multiplication" as const, "division" as const],
+    };
+    const operations = new Set<string>();
+    for (let index = 0; index < 200; index++) {
+      const question = buildReviewQuestion(multiplicationPatterns, withDivision, now, THRESHOLD);
+      if (question) operations.add(question.operation);
+    }
+    expect(operations.has("division")).toBe(true);
+  });
+
   it("uses several patterns in one session", () => {
     const seen = new Set<string>();
     let previous: string | undefined;

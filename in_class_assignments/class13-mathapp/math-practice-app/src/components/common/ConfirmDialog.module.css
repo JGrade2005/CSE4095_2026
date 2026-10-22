@@ -29,7 +29,7 @@
   margin-top: 1.25rem;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 37.5em) {
   .actions {
     flex-direction: column-reverse;
     align-items: stretch;
