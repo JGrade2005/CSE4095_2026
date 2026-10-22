@@ -294,18 +294,20 @@ describe("generated questions", () => {
       ["division", 0, 4],
       ["subtraction", 5, 5],
       ["addition", 0, 0],
-    ].map(([operation, firstOperand, secondOperand], index) => ({
-      id: `zero-${index}`,
-      operation: operation as MistakePattern["operation"],
-      firstOperand: firstOperand as number,
-      secondOperand: secondOperand as number,
-      correctAnswer: 0,
-      difficulty: 1,
-      incorrectCount: 1,
-      similarCorrectCount: 0,
-      lastIncorrectAt: "2026-03-01T12:00:00.000Z",
-      mastered: false,
-    }));
+    ].flatMap(([operation, firstOperand, secondOperand], index) =>
+      ([1, 2, 3] as const).map((difficulty) => ({
+        id: `zero-${index}-${difficulty}`,
+        operation: operation as MistakePattern["operation"],
+        firstOperand: firstOperand as number,
+        secondOperand: secondOperand as number,
+        correctAnswer: 0,
+        difficulty,
+        incorrectCount: 1,
+        similarCorrectCount: 0,
+        lastIncorrectAt: "2026-03-01T12:00:00.000Z",
+        mastered: false,
+      })),
+    );
 
     for (const pattern of zeroPatterns) {
       for (let i = 0; i < 50; i++) {

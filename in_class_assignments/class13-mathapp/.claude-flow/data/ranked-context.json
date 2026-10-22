@@ -518,9 +518,9 @@
       "content": "Only comment on things a reader cannot infer from the code: a non-obvious constraint, a workaround, or a design reason. Don't narrate what a line does, and don't add JSDoc to obvious components.\n\n**Why:** User asked for this at the start of class13-mathapp Phase 2 (2026-10-21). It reinforces the comment rule in ~/agenticlibrary/context.md.\n**How to apply:** Pass this rule on to coding subagents in their prompts, and strip any narrating comments when reviewing their output. Related: [[subagent-model-routing]], [[agentic-library]]",
       "summary": "auto-memory:minimal-code-comments.md:minimal-code-comments",
       "category": "auto-memory",
-      "confidence": 0.7000000000000002,
+      "confidence": 0.7500000000000002,
       "pageRank": 0.05910945413255778,
-      "accessCount": 4,
+      "accessCount": 5,
       "words": [
         "comment",
         "things",
