@@ -2,8 +2,8 @@
 
 ## General requirements
 
-- [ ] Use Auto MPG dataset from https://raw.githubusercontent.com/plotly/datasets/master/auto-mpg.csv
-- [ ] Prediction target is `mpg`
+- [x] Use Auto MPG dataset from https://raw.githubusercontent.com/plotly/datasets/master/auto-mpg.csv
+- [x] Prediction target is `mpg`
 - [ ] Do not optimize against the test set
 - [ ] Use training data + cross-validation for model development
 - [ ] Use test data once for final evaluation
@@ -15,9 +15,9 @@
 
 ## Part 1 — Load and Understand the Dataset
 
-- [ ] Code: Load the Auto MPG dataset into a Pandas DataFrame
-- [ ] Code: Inspect shape, first several rows, column names, data types, missing values, descriptive statistics
-- [ ] Plot: Create at least one useful visualization of `mpg`
+- [x] Code: Load the Auto MPG dataset into a Pandas DataFrame
+- [x] Code: Inspect shape, first several rows, column names, data types, missing values, descriptive statistics
+- [x] Plot: Create at least one useful visualization of `mpg`
 - [ ] Q: "What does one row represent?"
 - [ ] Q: "What is the prediction target?"
 - [ ] Q: "Why is this a regression problem?"
@@ -224,7 +224,7 @@
 ## What to Submit
 
 - [ ] One Jupyter/Colab notebook (`.ipynb`) that runs from beginning to end
-- [ ] Dataset inspection in notebook
+- [x] Dataset inspection in notebook
 - [ ] Final 80/20 train/test split in notebook
 - [ ] Mean baseline in notebook
 - [ ] Untuned Random Forest baseline in notebook

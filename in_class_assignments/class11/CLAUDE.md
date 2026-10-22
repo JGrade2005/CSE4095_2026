@@ -6,6 +6,7 @@ If the library conflicts with these rules, these rules win.
 ## Ground rules (apply to every step)
 
 1. **Notebook:** `class11_feature_engineering.ipynb`. Dataset: https://raw.githubusercontent.com/plotly/datasets/master/auto-mpg.csv. Target: `mpg` (regression).
+   - Local copy: `auto-mpg.csv` (unmodified download). The notebook reads the local file if present, otherwise the URL (Colab). `model-year` is renamed to `model_year` right after loading.
 2. **One split.** One 80/20 train/test split with `random_state=42`, created in Part 2 and reused everywhere.
 3. **TEST SET LOCK.** `X_test` and `y_test` may not be used for feature engineering, importance, selection, tuning or experiments. They stay locked until the user types exactly `UNLOCK TEST SET`. If any step would touch them before that, stop and tell the user.
    - Status: **LOCKED**
@@ -31,6 +32,10 @@ If the library conflicts with these rules, these rules win.
 Routing: one narrow task per subagent, exact file paths, exact output format. The lead keeps decision-gate prep, leakage review, concept explanations, and the final review of every subagent's output. If a subagent's result can't be verified, say so instead of passing it on.
 
 ## Environment
+
+- **Never commit or push.** The user does all git operations.
+- The user gives one Part prompt at a time. Do only that Part, then stop.
+- The user runs the notebook in VS Code or Google Colab.
 
 - Python: `.venv/bin/python` (system Python has no sklearn). Packages: pandas, numpy, matplotlib, scikit-learn, ipykernel, nbclient, nbconvert. `.venv/` is gitignored.
 
