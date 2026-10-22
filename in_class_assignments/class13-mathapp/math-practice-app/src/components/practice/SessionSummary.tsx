@@ -1,5 +1,6 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties } from "react";
 import { calculateAccuracy } from "../../services/statisticsService";
+import type { MathOperation } from "../../types/question";
 import type { PracticeSession } from "../../types/session";
 import { OPERATION_LABELS, formatDifficulty, formatSessionLength } from "../../utils/labels";
 import OperationBadge from "../common/OperationBadge";
@@ -16,7 +17,8 @@ type Tone = "correct" | "incorrect" | "accuracy" | "plain";
 
 interface Row {
   term: string;
-  value: ReactNode;
+  value: string;
+  badges?: MathOperation[];
   tone: Tone;
 }
 
@@ -36,16 +38,8 @@ export default function SessionSummary({ session, reviewQuestionsCompleted }: Se
     { term: "Accuracy", value: `${accuracy}%`, tone: "accuracy" },
     {
       term: "Operations practiced",
-      value: (
-        <>
-          <span>{session.operations.map((item) => OPERATION_LABELS[item]).join(", ")}</span>
-          <span className={styles.badges}>
-            {session.operations.map((item) => (
-              <OperationBadge key={item} operation={item} size="sm" />
-            ))}
-          </span>
-        </>
-      ),
+      value: session.operations.map((item) => OPERATION_LABELS[item]).join(", "),
+      badges: session.operations,
       tone: "plain",
     },
     { term: "Difficulty", value: formatDifficulty(session.difficulty), tone: "plain" },
@@ -74,9 +68,18 @@ export default function SessionSummary({ session, reviewQuestionsCompleted }: Se
         Your results
       </h2>
       <dl className={styles.list}>
-        {rows.map(({ term, value, tone }) => (
+        {rows.map(({ term, value, tone, badges }) => (
           <div key={term} className={`${styles.item} ${styles[tone]}`}>
-            <dt className={styles.term}>{term}</dt>
+            <dt className={styles.term}>
+              {term}
+              {badges && (
+                <span className={styles.badges}>
+                  {badges.map((item) => (
+                    <OperationBadge key={item} operation={item} size="sm" />
+                  ))}
+                </span>
+              )}
+            </dt>
             <dd className={styles.value}>{value}</dd>
           </div>
         ))}

@@ -425,9 +425,9 @@
       "content": "The user provides each Part's prompt themselves (from their prompt set). Do only the Part asked. Don't read ahead in ~/agenticlibrary (e.g. the stored Class 11 prompt set) and build later Parts on my own.\n\n**Why:** User said on 2026-10-06: \"I will provide future prompts for you to do, do not just read from agenticLIbrary and go ahead.\"\n**How to apply:** Finish the requested Part, report, and stop. Use the library for conventions only. Related: [[agentic-library]], [[no-git-commits]]",
       "summary": "auto-memory:step-by-step-prompts.md:step-by-step-prompts",
       "category": "auto-memory",
-      "confidence": 0.5,
+      "confidence": 0.55,
       "pageRank": 0.05910945413255778,
-      "accessCount": 0,
+      "accessCount": 1,
       "words": [
         "user",
         "provides",
