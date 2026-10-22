@@ -1,0 +1,190 @@
+[
+  {
+    "timestamp": 1792636937551,
+    "nodes": 8,
+    "edges": 6,
+    "pageRankSum": 0.9999999999999998,
+    "confidences": [
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5
+    ],
+    "accessCounts": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "topPatterns": [
+      {
+        "id": "insight-1792636937537-x04g",
+        "summary": "Frequently edited: storageValidators.test.ts (3x)",
+        "confidence": 0.5,
+        "pageRank": 0.2943111430595513,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1792636937537-iuwn",
+        "summary": "Frequently edited: IMPLEMENTATION_PLAN.md (10x)",
+        "confidence": 0.5,
+        "pageRank": 0.15908720286182304,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1792636937537-oog2",
+        "summary": "Frequently edited: session.md (6x)",
+        "confidence": 0.5,
+        "pageRank": 0.11164014594736696,
+        "accessCount": 0
+      },
+      {
+        "id": "mem_mviskfvo_4ba2lzhm",
+        "summary": "auto-memory:MEMORY.md:(untitled)",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      },
+      {
+        "id": "mem_mviskfvq_2wbuaqh2",
+        "summary": "auto-memory:agentic-library.md:agentic-library",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      },
+      {
+        "id": "mem_mviskfvs_gu6kz0p9",
+        "summary": "auto-memory:no-git-commits.md:no-git-commits",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      },
+      {
+        "id": "mem_mviskfvt_vh84m6a3",
+        "summary": "auto-memory:step-by-step-prompts.md:step-by-step-prompts",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1792636937537-032g",
+        "summary": "Frequently edited: progress.mjs (10x)",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      }
+    ]
+  },
+  {
+    "timestamp": 1792637004314,
+    "nodes": 11,
+    "edges": 9,
+    "pageRankSum": 1,
+    "confidences": [
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5
+    ],
+    "accessCounts": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "topPatterns": [
+      {
+        "id": "insight-1792636937537-x04g",
+        "summary": "Frequently edited: storageValidators.test.ts (3x)",
+        "confidence": 0.5,
+        "pageRank": 0.19997826542023012,
+        "accessCount": 0
+      },
+      {
+        "id": "mem_mvixr3pe_b4h5xsh0",
+        "summary": "auto-memory:subagent-model-routing.md:subagent-model-routing",
+        "confidence": 0.5,
+        "pageRank": 0.15205892313527564,
+        "accessCount": 0
+      },
+      {
+        "id": "mem_mvixr3p5_fkboo5kf",
+        "summary": "auto-memory:MEMORY.md:(untitled)",
+        "confidence": 0.5,
+        "pageRank": 0.10935252717473513,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1792636937537-iuwn",
+        "summary": "Frequently edited: IMPLEMENTATION_PLAN.md (10x)",
+        "confidence": 0.5,
+        "pageRank": 0.10809641432779565,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1792636937537-oog2",
+        "summary": "Frequently edited: session.md (6x)",
+        "confidence": 0.5,
+        "pageRank": 0.0758571451466169,
+        "accessCount": 0
+      },
+      {
+        "id": "mem_mviskfvo_4ba2lzhm",
+        "summary": "auto-memory:MEMORY.md:(untitled)",
+        "confidence": 0.5,
+        "pageRank": 0.05910945413255778,
+        "accessCount": 0
+      },
+      {
+        "id": "mem_mviskfvq_2wbuaqh2",
+        "summary": "auto-memory:agentic-library.md:agentic-library",
+        "confidence": 0.5,
+        "pageRank": 0.05910945413255778,
+        "accessCount": 0
+      },
+      {
+        "id": "mem_mviskfvs_gu6kz0p9",
+        "summary": "auto-memory:no-git-commits.md:no-git-commits",
+        "confidence": 0.5,
+        "pageRank": 0.05910945413255778,
+        "accessCount": 0
+      },
+      {
+        "id": "mem_mviskfvt_vh84m6a3",
+        "summary": "auto-memory:step-by-step-prompts.md:step-by-step-prompts",
+        "confidence": 0.5,
+        "pageRank": 0.05910945413255778,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1792636937537-032g",
+        "summary": "Frequently edited: progress.mjs (10x)",
+        "confidence": 0.5,
+        "pageRank": 0.05910945413255778,
+        "accessCount": 0
+      }
+    ]
+  }
+]

@@ -99,41 +99,41 @@ Initial routes:
 
 ### 7. Create the Operation Selector
 
--   [ ] Create an operation-selection component.
--   [ ] Add an option for addition.
--   [ ] Add an option for subtraction.
--   [ ] Add an option for multiplication.
--   [ ] Add an option for division.
--   [ ] Allow more than one operation to be selected.
--   [ ] Add a shortcut for selecting all operations.
--   [ ] Visually indicate selected operations.
--   [ ] Make operation controls keyboard accessible.
+-   [x] Create an operation-selection component.
+-   [x] Add an option for addition.
+-   [x] Add an option for subtraction.
+-   [x] Add an option for multiplication.
+-   [x] Add an option for division.
+-   [x] Allow more than one operation to be selected.
+-   [x] Add a shortcut for selecting all operations.
+-   [x] Visually indicate selected operations.
+-   [x] Make operation controls keyboard accessible.
 
 ### 8. Create the Difficulty Selector
 
--   [ ] Create four difficulty options.
--   [ ] Label them Beginner, Easy, Intermediate, and Advanced.
--   [ ] Allow one difficulty level to be selected.
--   [ ] Visually indicate the selected level.
--   [ ] Add a short description for each level.
+-   [x] Create four difficulty options.
+-   [x] Label them Beginner, Easy, Intermediate, and Advanced.
+-   [x] Allow one difficulty level to be selected.
+-   [x] Visually indicate the selected level.
+-   [x] Add a short description for each level.
 
 ### 9. Create the Session-Length Selector
 
--   [ ] Add a 5-question option.
--   [ ] Add a 10-question option.
--   [ ] Add a 20-question option.
--   [ ] Add a continuous-practice option.
--   [ ] Set a sensible default session length.
+-   [x] Add a 5-question option.
+-   [x] Add a 10-question option.
+-   [x] Add a 20-question option.
+-   [x] Add a continuous-practice option.
+-   [x] Set a sensible default session length.
 
 ### 10. Build the Practice Setup Page
 
--   [ ] Add the operation selector.
--   [ ] Add the difficulty selector.
--   [ ] Add the session-length selector.
--   [ ] Add a **Start Session** button.
--   [ ] Disable the button when no operation is selected.
--   [ ] Display a validation message when necessary.
--   [ ] Pass the selected configuration to the practice session.
+-   [x] Add the operation selector.
+-   [x] Add the difficulty selector.
+-   [x] Add the session-length selector.
+-   [x] Add a **Start Session** button.
+-   [x] Disable the button when no operation is selected.
+-   [x] Display a validation message when necessary.
+-   [x] Pass the selected configuration to the practice session.
 
 ------------------------------------------------------------------------
 
@@ -141,60 +141,60 @@ Initial routes:
 
 ### 11. Create General Question Utilities
 
--   [ ] Create a random integer utility.
--   [ ] Create an array-shuffling utility.
--   [ ] Create a unique-ID utility.
--   [ ] Add unit tests for each utility.
+-   [x] Create a random integer utility.
+-   [x] Create an array-shuffling utility.
+-   [x] Create a unique-ID utility.
+-   [x] Add unit tests for each utility.
 
 ### 12. Implement Addition Questions
 
--   [ ] Generate two operands.
--   [ ] Apply the selected difficulty rules.
--   [ ] Calculate the correct answer.
--   [ ] Generate the display text.
--   [ ] Return a valid `Question` object.
--   [ ] Test minimum and maximum operand ranges.
--   [ ] Test maximum-result restrictions.
+-   [x] Generate two operands.
+-   [x] Apply the selected difficulty rules.
+-   [x] Calculate the correct answer.
+-   [x] Generate the display text.
+-   [x] Return a valid `Question` object.
+-   [x] Test minimum and maximum operand ranges.
+-   [x] Test maximum-result restrictions.
 
 ### 13. Implement Subtraction Questions
 
--   [ ] Generate two operands.
--   [ ] Prevent negative answers for the initial version.
--   [ ] Apply the selected difficulty rules.
--   [ ] Calculate the correct answer.
--   [ ] Generate the display text.
--   [ ] Return a valid `Question` object.
--   [ ] Test that the first operand is not smaller than the second.
+-   [x] Generate two operands.
+-   [x] Prevent negative answers for the initial version.
+-   [x] Apply the selected difficulty rules.
+-   [x] Calculate the correct answer.
+-   [x] Generate the display text.
+-   [x] Return a valid `Question` object.
+-   [x] Test that the first operand is not smaller than the second.
 
 ### 14. Implement Multiplication Questions
 
--   [ ] Generate two factors.
--   [ ] Apply the selected difficulty rules.
--   [ ] Calculate the correct product.
--   [ ] Generate the display text.
--   [ ] Return a valid `Question` object.
--   [ ] Test factor ranges for every difficulty level.
+-   [x] Generate two factors.
+-   [x] Apply the selected difficulty rules.
+-   [x] Calculate the correct product.
+-   [x] Generate the display text.
+-   [x] Return a valid `Question` object.
+-   [x] Test factor ranges for every difficulty level.
 
 ### 15. Implement Division Questions
 
--   [ ] Generate a nonzero divisor.
--   [ ] Generate a whole-number quotient.
--   [ ] Calculate the dividend from the divisor and quotient.
--   [ ] Apply the selected difficulty rules.
--   [ ] Generate the display text.
--   [ ] Return a valid `Question` object.
--   [ ] Test that division by zero is impossible.
--   [ ] Test that all answers are whole numbers.
+-   [x] Generate a nonzero divisor.
+-   [x] Generate a whole-number quotient.
+-   [x] Calculate the dividend from the divisor and quotient.
+-   [x] Apply the selected difficulty rules.
+-   [x] Generate the display text.
+-   [x] Return a valid `Question` object.
+-   [x] Test that division by zero is impossible.
+-   [x] Test that all answers are whole numbers.
 
 ### 16. Create the Main Question Generator
 
--   [ ] Accept an operation and difficulty level.
--   [ ] Call the correct operation-specific generator.
--   [ ] Randomly select an operation when multiple operations are
+-   [x] Accept an operation and difficulty level.
+-   [x] Call the correct operation-specific generator.
+-   [x] Randomly select an operation when multiple operations are
     enabled.
--   [ ] Validate the generated question.
--   [ ] Handle unexpected generation failures.
--   [ ] Add unit tests for all operations and difficulty levels.
+-   [x] Validate the generated question.
+-   [x] Handle unexpected generation failures.
+-   [x] Add unit tests for all operations and difficulty levels.
 
 ------------------------------------------------------------------------
 
@@ -202,31 +202,31 @@ Initial routes:
 
 ### 17. Generate Incorrect Answer Choices
 
--   [ ] Generate three incorrect answers.
--   [ ] Ensure incorrect answers differ from the correct answer.
--   [ ] Ensure all choices are unique.
--   [ ] Keep incorrect answers plausible.
--   [ ] Avoid negative choices when negative values are not allowed.
--   [ ] Prevent fractional choices in whole-number questions.
--   [ ] Add a retry limit to prevent infinite loops.
+-   [x] Generate three incorrect answers.
+-   [x] Ensure incorrect answers differ from the correct answer.
+-   [x] Ensure all choices are unique.
+-   [x] Keep incorrect answers plausible.
+-   [x] Avoid negative choices when negative values are not allowed.
+-   [x] Prevent fractional choices in whole-number questions.
+-   [x] Add a retry limit to prevent infinite loops.
 
 ### 18. Add Operation-Specific Distractors
 
--   [ ] Generate nearby-number distractors.
--   [ ] Generate addition mistake distractors.
--   [ ] Generate subtraction mistake distractors.
--   [ ] Generate multiplication-table distractors.
--   [ ] Generate division fact-family distractors.
--   [ ] Test common edge cases such as answers near zero.
+-   [x] Generate nearby-number distractors.
+-   [x] Generate addition mistake distractors.
+-   [x] Generate subtraction mistake distractors.
+-   [x] Generate multiplication-table distractors.
+-   [x] Generate division fact-family distractors.
+-   [x] Test common edge cases such as answers near zero.
 
 ### 19. Shuffle the Answer Choices
 
--   [ ] Combine the correct answer with the distractors.
--   [ ] Shuffle all four choices.
--   [ ] Confirm that the correct answer appears exactly once.
--   [ ] Confirm that the correct answer does not remain in a predictable
+-   [x] Combine the correct answer with the distractors.
+-   [x] Shuffle all four choices.
+-   [x] Confirm that the correct answer appears exactly once.
+-   [x] Confirm that the correct answer does not remain in a predictable
     position.
--   [ ] Add automated tests.
+-   [x] Add automated tests.
 
 ------------------------------------------------------------------------
 
@@ -234,56 +234,56 @@ Initial routes:
 
 ### 20. Create the Answer Choice Component
 
--   [ ] Display a single answer choice as a button.
--   [ ] Support selected and unselected states.
--   [ ] Add hover and focus states.
--   [ ] Add a sufficiently large touch target.
--   [ ] Add an accessible label.
--   [ ] Prevent changes after the card has been flipped.
+-   [x] Display a single answer choice as a button.
+-   [x] Support selected and unselected states.
+-   [x] Add hover and focus states.
+-   [x] Add a sufficiently large touch target.
+-   [x] Add an accessible label.
+-   [x] Prevent changes after the card has been flipped.
 
 ### 21. Create the Front of the Question Card
 
--   [ ] Display the arithmetic question.
--   [ ] Display four answer choices.
--   [ ] Display the current question number.
--   [ ] Display the total number of questions.
--   [ ] Add a **Flip Card** button.
--   [ ] Disable the flip button until an answer is selected.
--   [ ] Use large, readable math text.
+-   [x] Display the arithmetic question.
+-   [x] Display four answer choices.
+-   [x] Display the current question number.
+-   [x] Display the total number of questions.
+-   [x] Add a **Flip Card** button.
+-   [x] Disable the flip button until an answer is selected.
+-   [x] Use large, readable math text.
 
 ### 22. Add Answer Selection
 
--   [ ] Store the selected answer in component state.
--   [ ] Highlight the selected answer.
--   [ ] Allow the selected answer to be changed before flipping.
--   [ ] Enable the flip button after selection.
--   [ ] Reset the selected answer for each new question.
+-   [x] Store the selected answer in component state.
+-   [x] Highlight the selected answer.
+-   [x] Allow the selected answer to be changed before flipping.
+-   [x] Enable the flip button after selection.
+-   [x] Reset the selected answer for each new question.
 
 ### 23. Create the Back of the Question Card
 
--   [ ] Display the original question.
--   [ ] Display the correct answer.
--   [ ] Display the student's selected answer.
--   [ ] Add an **I Got It Right** button.
--   [ ] Add an **I Got It Wrong** button.
--   [ ] Prevent both buttons from being selected for the same attempt.
+-   [x] Display the original question.
+-   [x] Display the correct answer.
+-   [x] Display the student's selected answer.
+-   [x] Add an **I Got It Right** button.
+-   [x] Add an **I Got It Wrong** button.
+-   [x] Prevent both buttons from being selected for the same attempt.
 
 ### 24. Add Basic Card-Flipping Behavior
 
--   [ ] Add an `isCardFlipped` state.
--   [ ] Show the front before flipping.
--   [ ] Show the back after flipping.
--   [ ] Prevent answer changes after flipping.
--   [ ] Reset the flip state for the next question.
--   [ ] Ensure the card works without animation.
+-   [x] Add an `isCardFlipped` state.
+-   [x] Show the front before flipping.
+-   [x] Show the back after flipping.
+-   [x] Prevent answer changes after flipping.
+-   [x] Reset the flip state for the next question.
+-   [x] Ensure the card works without animation.
 
 ### 25. Add the Card-Flip Animation
 
--   [ ] Add a CSS flip animation.
--   [ ] Keep the front and back aligned.
--   [ ] Prevent mirrored or unreadable card content.
--   [ ] Support reduced-motion preferences.
--   [ ] Add a setting for disabling animations.
+-   [x] Add a CSS flip animation.
+-   [x] Keep the front and back aligned.
+-   [x] Prevent mirrored or unreadable card content.
+-   [x] Support reduced-motion preferences.
+-   [x] Add a setting for disabling animations.
 
 ------------------------------------------------------------------------
 
@@ -291,54 +291,54 @@ Initial routes:
 
 ### 26. Create the Practice Session State
 
--   [ ] Store the session ID.
--   [ ] Store the selected operations.
--   [ ] Store the selected difficulty.
--   [ ] Store the selected session length.
--   [ ] Store the current question index.
--   [ ] Store session correct and incorrect totals.
--   [ ] Store whether the session is active.
+-   [x] Store the session ID.
+-   [x] Store the selected operations.
+-   [x] Store the selected difficulty.
+-   [x] Store the selected session length.
+-   [x] Store the current question index.
+-   [x] Store session correct and incorrect totals.
+-   [x] Store whether the session is active.
 
 ### 27. Build the Practice Session Page
 
--   [ ] Read the setup configuration.
--   [ ] Generate the first question.
--   [ ] Display the question card.
--   [ ] Handle missing or invalid setup data.
--   [ ] Redirect to the setup page when no valid session exists.
+-   [x] Read the setup configuration.
+-   [x] Generate the first question.
+-   [x] Display the question card.
+-   [x] Handle missing or invalid setup data.
+-   [x] Redirect to the setup page when no valid session exists.
 
 ### 28. Record Self-Reported Results
 
--   [ ] Handle the **I Got It Right** button.
--   [ ] Handle the **I Got It Wrong** button.
--   [ ] Increment the session-attempt total.
--   [ ] Increment the correct or incorrect total.
--   [ ] Prevent duplicate result recording.
--   [ ] Store the completed attempt.
+-   [x] Handle the **I Got It Right** button.
+-   [x] Handle the **I Got It Wrong** button.
+-   [x] Increment the session-attempt total.
+-   [x] Increment the correct or incorrect total.
+-   [x] Prevent duplicate result recording.
+-   [x] Store the completed attempt.
 
 ### 29. Advance to the Next Question
 
--   [ ] Generate a new question after recording a result.
--   [ ] Increment the question number.
--   [ ] Reset the selected answer.
--   [ ] Reset the card-flip state.
--   [ ] Avoid immediately repeating the same question.
--   [ ] Add an optional short transition.
+-   [x] Generate a new question after recording a result.
+-   [x] Increment the question number.
+-   [x] Reset the selected answer.
+-   [x] Reset the card-flip state.
+-   [x] Avoid immediately repeating the same question.
+-   [x] Add an optional short transition.
 
 ### 30. Add Session Progress
 
--   [ ] Display "Question X of Y."
--   [ ] Add a visual progress bar.
--   [ ] Update progress after every attempt.
--   [ ] Hide fixed progress for continuous practice.
--   [ ] Ensure progress is accessible to screen readers.
+-   [x] Display "Question X of Y."
+-   [x] Add a visual progress bar.
+-   [x] Update progress after every attempt.
+-   [x] Hide fixed progress for continuous practice.
+-   [x] Ensure progress is accessible to screen readers.
 
 ### 31. Support Continuous Practice
 
--   [ ] Generate questions without a fixed endpoint.
--   [ ] Add an **End Session** button.
--   [ ] Confirm before ending when appropriate.
--   [ ] Generate a summary after the session ends.
+-   [x] Generate questions without a fixed endpoint.
+-   [x] Add an **End Session** button.
+-   [x] Confirm before ending when appropriate.
+-   [x] Generate a summary after the session ends.
 
 ------------------------------------------------------------------------
 
@@ -346,28 +346,28 @@ Initial routes:
 
 ### 32. Detect Session Completion
 
--   [ ] Compare attempted questions with the selected session length.
--   [ ] Stop generating questions when the session is complete.
--   [ ] Save the completion timestamp.
--   [ ] Navigate to the summary page.
+-   [x] Compare attempted questions with the selected session length.
+-   [x] Stop generating questions when the session is complete.
+-   [x] Save the completion timestamp.
+-   [x] Navigate to the summary page.
 
 ### 33. Create the Session Summary Page
 
--   [ ] Display total questions attempted.
--   [ ] Display correct answers.
--   [ ] Display incorrect answers.
--   [ ] Calculate and display accuracy.
--   [ ] Display practiced operations.
--   [ ] Display the difficulty level.
--   [ ] Display mistake-review question count.
+-   [x] Display total questions attempted.
+-   [x] Display correct answers.
+-   [x] Display incorrect answers.
+-   [x] Calculate and display accuracy.
+-   [x] Display practiced operations.
+-   [x] Display the difficulty level.
+-   [x] Display mistake-review question count.
 
 ### 34. Add Summary Actions
 
--   [ ] Add a **Practice Again** button.
--   [ ] Add a **Practice Mistakes** button.
--   [ ] Add a **Change Settings** button.
--   [ ] Add a **View Statistics** button.
--   [ ] Add a **Return Home** button.
+-   [x] Add a **Practice Again** button.
+-   [x] Add a **Practice Mistakes** button.
+-   [x] Add a **Change Settings** button.
+-   [x] Add a **View Statistics** button.
+-   [x] Add a **Return Home** button.
 
 ------------------------------------------------------------------------
 
@@ -375,43 +375,43 @@ Initial routes:
 
 ### 35. Create the Storage Service
 
--   [ ] Create a wrapper around `localStorage`.
--   [ ] Add functions for reading data.
--   [ ] Add functions for writing data.
--   [ ] Add JSON parsing error handling.
--   [ ] Add validation for loaded data.
--   [ ] Handle unavailable browser storage.
--   [ ] Handle storage-capacity errors.
+-   [x] Create a wrapper around `localStorage`.
+-   [x] Add functions for reading data.
+-   [x] Add functions for writing data.
+-   [x] Add JSON parsing error handling.
+-   [x] Add validation for loaded data.
+-   [x] Handle unavailable browser storage.
+-   [x] Handle storage-capacity errors.
 
 ### 36. Add Data Schema Versioning
 
--   [ ] Store a data-schema version.
--   [ ] Detect missing or older versions.
--   [ ] Create an initial migration structure.
--   [ ] Avoid deleting unrelated stored data.
+-   [x] Store a data-schema version.
+-   [x] Detect missing or older versions.
+-   [x] Create an initial migration structure.
+-   [x] Avoid deleting unrelated stored data.
 
 ### 37. Persist Application Settings
 
--   [ ] Save selected settings.
--   [ ] Load settings when the application starts.
--   [ ] Use defaults when no settings exist.
--   [ ] Recover from invalid stored settings.
+-   [x] Save selected settings.
+-   [x] Load settings when the application starts.
+-   [x] Use defaults when no settings exist.
+-   [x] Recover from invalid stored settings.
 
 ### 38. Persist Practice Sessions
 
--   [ ] Save session information.
--   [ ] Save session completion details.
--   [ ] Load recent sessions.
--   [ ] Limit or summarize old session records when necessary.
+-   [x] Save session information.
+-   [x] Save session completion details.
+-   [x] Load recent sessions.
+-   [x] Limit or summarize old session records when necessary.
 
 ### 39. Persist Practice Attempts
 
--   [ ] Save every completed attempt.
--   [ ] Include the selected answer.
--   [ ] Include the self-reported result.
--   [ ] Include the operation and difficulty.
--   [ ] Include the session ID and timestamp.
--   [ ] Confirm that attempts persist after a browser restart.
+-   [x] Save every completed attempt.
+-   [x] Include the selected answer.
+-   [x] Include the self-reported result.
+-   [x] Include the operation and difficulty.
+-   [x] Include the session ID and timestamp.
+-   [x] Confirm that attempts persist after a browser restart.
 
 ------------------------------------------------------------------------
 
@@ -419,71 +419,71 @@ Initial routes:
 
 ### 40. Implement Statistics Calculations
 
--   [ ] Calculate total attempted questions.
--   [ ] Calculate total correct answers.
--   [ ] Calculate total incorrect answers.
--   [ ] Calculate overall accuracy.
--   [ ] Handle zero attempts without dividing by zero.
--   [ ] Add unit tests for calculations.
+-   [x] Calculate total attempted questions.
+-   [x] Calculate total correct answers.
+-   [x] Calculate total incorrect answers.
+-   [x] Calculate overall accuracy.
+-   [x] Handle zero attempts without dividing by zero.
+-   [x] Add unit tests for calculations.
 
 ### 41. Track Statistics by Operation
 
--   [ ] Track addition attempts.
--   [ ] Track subtraction attempts.
--   [ ] Track multiplication attempts.
--   [ ] Track division attempts.
--   [ ] Calculate accuracy for each operation.
+-   [x] Track addition attempts.
+-   [x] Track subtraction attempts.
+-   [x] Track multiplication attempts.
+-   [x] Track division attempts.
+-   [x] Calculate accuracy for each operation.
 
 ### 42. Track Statistics by Difficulty
 
--   [ ] Track Level 1 performance.
--   [ ] Track Level 2 performance.
--   [ ] Track Level 3 performance.
--   [ ] Track Level 4 performance.
--   [ ] Calculate accuracy for each level.
+-   [x] Track Level 1 performance.
+-   [x] Track Level 2 performance.
+-   [x] Track Level 3 performance.
+-   [x] Track Level 4 performance.
+-   [x] Calculate accuracy for each level.
 
 ### 43. Create the Statistics Overview
 
--   [ ] Display total attempted questions.
--   [ ] Display total correct answers.
--   [ ] Display total incorrect answers.
--   [ ] Display overall accuracy.
--   [ ] Add an empty state for new users.
+-   [x] Display total attempted questions.
+-   [x] Display total correct answers.
+-   [x] Display total incorrect answers.
+-   [x] Display overall accuracy.
+-   [x] Add an empty state for new users.
 
 ### 44. Display Statistics by Operation
 
--   [ ] Create one statistics card per operation.
--   [ ] Display attempted, correct, and incorrect totals.
--   [ ] Display accuracy.
--   [ ] Make the layout responsive.
+-   [x] Create one statistics card per operation.
+-   [x] Display attempted, correct, and incorrect totals.
+-   [x] Display accuracy.
+-   [x] Make the layout responsive.
 
 ### 45. Display Statistics by Difficulty
 
--   [ ] Create one statistics card per difficulty level.
--   [ ] Display attempted, correct, and incorrect totals.
--   [ ] Display accuracy.
--   [ ] Clearly label each level.
+-   [x] Create one statistics card per difficulty level.
+-   [x] Display attempted, correct, and incorrect totals.
+-   [x] Display accuracy.
+-   [x] Clearly label each level.
 
 ### 46. Display Recent Sessions
 
--   [ ] List recent session dates.
--   [ ] Display operations practiced.
--   [ ] Display difficulty.
--   [ ] Display attempted, correct, and incorrect totals.
--   [ ] Display session accuracy.
--   [ ] Sort sessions from newest to oldest.
--   [ ] Add an empty state when no sessions exist.
+-   [x] List recent session dates.
+-   [x] Display operations practiced.
+-   [x] Display difficulty.
+-   [x] Display attempted, correct, and incorrect totals.
+-   [x] Display session accuracy.
+-   [x] Sort sessions from newest to oldest.
+-   [x] Add an empty state when no sessions exist.
 
 ### 47. Add Statistics Reset
 
--   [ ] Add a **Reset Statistics** button.
--   [ ] Create a confirmation dialog.
--   [ ] Require explicit confirmation.
--   [ ] Clear attempts.
--   [ ] Clear sessions.
--   [ ] Clear aggregate statistics.
--   [ ] Decide whether settings should remain unchanged.
--   [ ] Refresh the statistics page after deletion.
+-   [x] Add a **Reset Statistics** button.
+-   [x] Create a confirmation dialog.
+-   [x] Require explicit confirmation.
+-   [x] Clear attempts.
+-   [x] Clear sessions.
+-   [x] Clear aggregate statistics.
+-   [x] Decide whether settings should remain unchanged.
+-   [x] Refresh the statistics page after deletion.
 
 ------------------------------------------------------------------------
 
@@ -491,28 +491,28 @@ Initial routes:
 
 ### 48. Create the Settings Page
 
--   [ ] Add a sound-effects setting.
--   [ ] Add a card-animation setting.
--   [ ] Add a show-explanations setting.
--   [ ] Add a default session-length setting.
--   [ ] Add a default difficulty setting.
--   [ ] Add default operation settings.
--   [ ] Save settings automatically or through a save button.
+-   [x] Add a sound-effects setting.
+-   [x] Add a card-animation setting.
+-   [x] Add a show-explanations setting.
+-   [x] Add a default session-length setting.
+-   [x] Add a default difficulty setting.
+-   [x] Add default operation settings.
+-   [x] Save settings automatically or through a save button.
 
 ### 49. Apply Default Practice Settings
 
--   [ ] Load default operations on the setup page.
--   [ ] Load the default difficulty.
--   [ ] Load the default session length.
--   [ ] Allow defaults to be changed for an individual session.
+-   [x] Load default operations on the setup page.
+-   [x] Load the default difficulty.
+-   [x] Load the default session length.
+-   [x] Allow defaults to be changed for an individual session.
 
 ### 50. Add Clear-All-Data Functionality
 
--   [ ] Add a **Clear All Application Data** button.
--   [ ] Show a strong confirmation warning.
--   [ ] Clear settings, sessions, attempts, and mistake patterns.
--   [ ] Restore application defaults.
--   [ ] Return the user to the home page.
+-   [x] Add a **Clear All Application Data** button.
+-   [x] Show a strong confirmation warning.
+-   [x] Clear settings, sessions, attempts, and mistake patterns.
+-   [x] Restore application defaults.
+-   [x] Return the user to the home page.
 
 ------------------------------------------------------------------------
 
@@ -520,29 +520,29 @@ Initial routes:
 
 ### 51. Create Mistake Patterns
 
--   [ ] Create a mistake pattern after an incorrect answer.
--   [ ] Store the operation.
--   [ ] Store both operands.
--   [ ] Store the correct answer.
--   [ ] Store the difficulty level.
--   [ ] Store the last incorrect date.
--   [ ] Initialize the incorrect count.
--   [ ] Initialize the similar-correct count.
+-   [x] Create a mistake pattern after an incorrect answer.
+-   [x] Store the operation.
+-   [x] Store both operands.
+-   [x] Store the correct answer.
+-   [x] Store the difficulty level.
+-   [x] Store the last incorrect date.
+-   [x] Initialize the incorrect count.
+-   [x] Initialize the similar-correct count.
 
 ### 52. Update Existing Mistake Patterns
 
--   [ ] Detect when the same pattern already exists.
--   [ ] Increment its incorrect count.
--   [ ] Update its last-incorrect timestamp.
--   [ ] Reset or reduce mastery progress when appropriate.
--   [ ] Avoid creating duplicate pattern records.
+-   [x] Detect when the same pattern already exists.
+-   [x] Increment its incorrect count.
+-   [x] Update its last-incorrect timestamp.
+-   [x] Reset or reduce mastery progress when appropriate.
+-   [x] Avoid creating duplicate pattern records.
 
 ### 53. Store Mistake Patterns Locally
 
--   [ ] Save mistake patterns to local storage.
--   [ ] Load mistake patterns at application startup.
--   [ ] Validate stored mistake-pattern data.
--   [ ] Recover gracefully from invalid records.
+-   [x] Save mistake patterns to local storage.
+-   [x] Load mistake patterns at application startup.
+-   [x] Validate stored mistake-pattern data.
+-   [x] Recover gracefully from invalid records.
 
 ------------------------------------------------------------------------
 
@@ -550,35 +550,35 @@ Initial routes:
 
 ### 54. Generate Nearby-Number Questions
 
--   [ ] Create similar questions using nearby operands.
--   [ ] Keep questions within the same difficulty range.
--   [ ] Avoid invalid subtraction questions.
--   [ ] Avoid invalid division questions.
--   [ ] Avoid generating the exact same question too frequently.
+-   [x] Create similar questions using nearby operands.
+-   [x] Keep questions within the same difficulty range.
+-   [x] Avoid invalid subtraction questions.
+-   [x] Avoid invalid division questions.
+-   [x] Avoid generating the exact same question too frequently.
 
 ### 55. Generate Reversed-Operand Questions
 
--   [ ] Reverse addition operands.
--   [ ] Reverse multiplication operands.
--   [ ] Avoid treating reversed subtraction as equivalent.
--   [ ] Avoid treating reversed division as equivalent.
+-   [x] Reverse addition operands.
+-   [x] Reverse multiplication operands.
+-   [x] Avoid treating reversed subtraction as equivalent.
+-   [x] Avoid treating reversed division as equivalent.
 
 ### 56. Generate Fact-Family Questions
 
--   [ ] Generate multiplication questions from division mistakes.
--   [ ] Generate division questions from multiplication mistakes.
--   [ ] Generate subtraction questions from addition mistakes.
--   [ ] Generate addition questions from subtraction mistakes.
--   [ ] Ensure generated questions match the selected difficulty.
+-   [x] Generate multiplication questions from division mistakes.
+-   [x] Generate division questions from multiplication mistakes.
+-   [x] Generate subtraction questions from addition mistakes.
+-   [x] Generate addition questions from subtraction mistakes.
+-   [x] Ensure generated questions match the selected difficulty.
 
 ### 57. Create the Similar Question Generator Service
 
--   [ ] Accept a mistake pattern.
--   [ ] Select an appropriate similarity strategy.
--   [ ] Generate a valid related question.
--   [ ] Label the question as `mistake-review`.
--   [ ] Attach the related mistake-pattern ID.
--   [ ] Add unit tests for every operation.
+-   [x] Accept a mistake pattern.
+-   [x] Select an appropriate similarity strategy.
+-   [x] Generate a valid related question.
+-   [x] Label the question as `mistake-review`.
+-   [x] Attach the related mistake-pattern ID.
+-   [x] Add unit tests for every operation.
 
 ------------------------------------------------------------------------
 
@@ -586,43 +586,43 @@ Initial routes:
 
 ### 58. Add Review Mode to Practice Setup
 
--   [ ] Add a regular-practice option.
--   [ ] Add a mistake-review option.
--   [ ] Disable mistake review when no active mistakes exist.
--   [ ] Explain why the option is disabled.
--   [ ] Display the number of active mistake patterns.
+-   [x] Add a regular-practice option.
+-   [x] Add a mistake-review option.
+-   [x] Disable mistake review when no active mistakes exist.
+-   [x] Explain why the option is disabled.
+-   [x] Display the number of active mistake patterns.
 
 ### 59. Prioritize Mistake Patterns
 
--   [ ] Give higher priority to frequently missed patterns.
--   [ ] Give higher priority to recently missed patterns.
--   [ ] Give higher priority to patterns with little successful review.
--   [ ] Randomize patterns with similar priority.
--   [ ] Test the prioritization logic.
+-   [x] Give higher priority to frequently missed patterns.
+-   [x] Give higher priority to recently missed patterns.
+-   [x] Give higher priority to patterns with little successful review.
+-   [x] Randomize patterns with similar priority.
+-   [x] Test the prioritization logic.
 
 ### 60. Build Mistake Review Sessions
 
--   [ ] Select active mistake patterns.
--   [ ] Generate similar questions from those patterns.
--   [ ] Mix multiple mistake patterns in one session.
--   [ ] Record which pattern produced each question.
--   [ ] Display mistake-review counts in the session summary.
+-   [x] Select active mistake patterns.
+-   [x] Generate similar questions from those patterns.
+-   [x] Mix multiple mistake patterns in one session.
+-   [x] Record which pattern produced each question.
+-   [x] Display mistake-review counts in the session summary.
 
 ### 61. Track Similar-Question Success
 
--   [ ] Increment similar-correct count after a correct review answer.
--   [ ] Handle incorrect review answers.
--   [ ] Update the original mistake pattern.
--   [ ] Store the updated pattern locally.
+-   [x] Increment similar-correct count after a correct review answer.
+-   [x] Handle incorrect review answers.
+-   [x] Update the original mistake pattern.
+-   [x] Store the updated pattern locally.
 
 ### 62. Implement Mastery Rules
 
--   [ ] Mark a pattern as mastered after three correct similar
+-   [x] Mark a pattern as mastered after three correct similar
     questions.
--   [ ] Make the mastery threshold configurable.
--   [ ] Exclude mastered patterns from normal review.
--   [ ] Allow mastered patterns to return after a future mistake.
--   [ ] Add tests for mastery transitions.
+-   [x] Make the mastery threshold configurable.
+-   [x] Exclude mastered patterns from normal review.
+-   [x] Allow mastered patterns to return after a future mistake.
+-   [x] Add tests for mastery transitions.
 
 ------------------------------------------------------------------------
 
@@ -630,26 +630,26 @@ Initial routes:
 
 ### 63. Add Mistake Statistics
 
--   [ ] Display the number of active mistake patterns.
--   [ ] Display the number of mastered patterns.
--   [ ] Display the number of similar questions practiced.
--   [ ] Display the number of review questions answered correctly.
+-   [x] Display the number of active mistake patterns.
+-   [x] Display the number of mastered patterns.
+-   [x] Display the number of similar questions practiced.
+-   [x] Display the number of review questions answered correctly.
 
 ### 64. Identify Frequently Missed Areas
 
--   [ ] Identify the most frequently missed operation.
--   [ ] Identify frequently missed number facts.
--   [ ] Sort mistake patterns by incorrect count.
--   [ ] Handle ties.
--   [ ] Add an empty state when there are no mistakes.
+-   [x] Identify the most frequently missed operation.
+-   [x] Identify frequently missed number facts.
+-   [x] Sort mistake patterns by incorrect count.
+-   [x] Handle ties.
+-   [x] Add an empty state when there are no mistakes.
 
 ### 65. Add Mistake Details
 
--   [ ] Display active mistake patterns.
--   [ ] Show incorrect counts.
--   [ ] Show mastery progress.
--   [ ] Show the most recent incorrect date.
--   [ ] Allow mastered patterns to be viewed separately.
+-   [x] Display active mistake patterns.
+-   [x] Show incorrect counts.
+-   [x] Show mastery progress.
+-   [x] Show the most recent incorrect date.
+-   [x] Allow mastered patterns to be viewed separately.
 
 ------------------------------------------------------------------------
 
@@ -657,35 +657,35 @@ Initial routes:
 
 ### 66. Improve Keyboard Navigation
 
--   [ ] Ensure every control is reachable with Tab.
--   [ ] Add visible focus indicators.
--   [ ] Support Enter and Space on buttons.
--   [ ] Support number keys 1--4 for answer selection.
--   [ ] Prevent keyboard shortcuts from interfering with form inputs.
+-   [x] Ensure every control is reachable with Tab.
+-   [x] Add visible focus indicators.
+-   [x] Support Enter and Space on buttons.
+-   [x] Support number keys 1--4 for answer selection.
+-   [x] Prevent keyboard shortcuts from interfering with form inputs.
 
 ### 67. Improve Screen-Reader Support
 
--   [ ] Use semantic HTML.
--   [ ] Add accessible labels to answer choices.
--   [ ] Announce question changes.
--   [ ] Announce the revealed correct answer.
--   [ ] Announce session progress.
--   [ ] Add accessible names to icon buttons.
+-   [x] Use semantic HTML.
+-   [x] Add accessible labels to answer choices.
+-   [x] Announce question changes.
+-   [x] Announce the revealed correct answer.
+-   [x] Announce session progress.
+-   [x] Add accessible names to icon buttons.
 
 ### 68. Support Reduced Motion
 
--   [ ] Detect `prefers-reduced-motion`.
--   [ ] Disable card animations when reduced motion is requested.
--   [ ] Ensure card content still changes clearly.
--   [ ] Respect the application's animation setting.
+-   [x] Detect `prefers-reduced-motion`.
+-   [x] Disable card animations when reduced motion is requested.
+-   [x] Ensure card content still changes clearly.
+-   [x] Respect the application's animation setting.
 
 ### 69. Check Visual Accessibility
 
--   [ ] Verify sufficient color contrast.
--   [ ] Avoid communicating results by color alone.
--   [ ] Add text or icons to selected states.
--   [ ] Test at 200% browser zoom.
--   [ ] Test with larger system font sizes.
+-   [x] Verify sufficient color contrast.
+-   [x] Avoid communicating results by color alone.
+-   [x] Add text or icons to selected states.
+-   [x] Test at 200% browser zoom.
+-   [x] Test with larger system font sizes.
 
 ------------------------------------------------------------------------
 
@@ -693,33 +693,33 @@ Initial routes:
 
 ### 70. Optimize for Tablets
 
--   [ ] Use large touch targets.
--   [ ] Center the practice card.
--   [ ] Keep answer choices easy to reach.
--   [ ] Test portrait and landscape orientations.
+-   [x] Use large touch targets.
+-   [x] Center the practice card.
+-   [x] Keep answer choices easy to reach.
+-   [x] Test portrait and landscape orientations.
 
 ### 71. Optimize for Mobile Devices
 
--   [ ] Stack answer choices when necessary.
--   [ ] Adjust card width.
--   [ ] Prevent horizontal scrolling.
--   [ ] Simplify navigation.
--   [ ] Test on common small-screen sizes.
+-   [x] Stack answer choices when necessary.
+-   [x] Adjust card width.
+-   [x] Prevent horizontal scrolling.
+-   [x] Simplify navigation.
+-   [x] Test on common small-screen sizes.
 
 ### 72. Optimize the Statistics Layout
 
--   [ ] Convert wide tables to cards on small screens.
--   [ ] Prevent labels and values from overlapping.
--   [ ] Keep recent sessions readable.
--   [ ] Support horizontal scrolling only when necessary.
+-   [x] Convert wide tables to cards on small screens.
+-   [x] Prevent labels and values from overlapping.
+-   [x] Keep recent sessions readable.
+-   [x] Support horizontal scrolling only when necessary.
 
 ### 73. Add Child-Friendly Feedback
 
--   [ ] Add positive feedback messages.
--   [ ] Add supportive messages after mistakes.
--   [ ] Avoid shaming language.
--   [ ] Randomize feedback without becoming distracting.
--   [ ] Add an option to disable feedback effects.
+-   [x] Add positive feedback messages.
+-   [x] Add supportive messages after mistakes.
+-   [x] Avoid shaming language.
+-   [x] Randomize feedback without becoming distracting.
+-   [x] Add an option to disable feedback effects.
 
 ------------------------------------------------------------------------
 
@@ -727,19 +727,19 @@ Initial routes:
 
 ### 74. Persist an Active Session
 
--   [ ] Save the active session.
--   [ ] Save the current question.
--   [ ] Save the selected answer when appropriate.
--   [ ] Restore the session after a page refresh.
--   [ ] Clear restored state when the session ends.
+-   [x] Save the active session.
+-   [x] Save the current question.
+-   [x] Save the selected answer when appropriate.
+-   [x] Restore the session after a page refresh.
+-   [x] Clear restored state when the session ends.
 
 ### 75. Protect Against Accidental Navigation
 
--   [ ] Detect attempts to leave an active session.
--   [ ] Display a confirmation prompt.
--   [ ] Allow the user to continue the session.
--   [ ] Allow the user to end and leave the session.
--   [ ] Avoid showing warnings after session completion.
+-   [x] Detect attempts to leave an active session.
+-   [x] Display a confirmation prompt.
+-   [x] Allow the user to continue the session.
+-   [x] Allow the user to end and leave the session.
+-   [x] Avoid showing warnings after session completion.
 
 ------------------------------------------------------------------------
 
@@ -747,28 +747,28 @@ Initial routes:
 
 ### 76. Handle Invalid Stored Data
 
--   [ ] Detect invalid settings.
--   [ ] Detect invalid attempts.
--   [ ] Detect invalid sessions.
--   [ ] Detect invalid mistake patterns.
--   [ ] Reset only the affected data category.
--   [ ] Avoid crashing the application.
+-   [x] Detect invalid settings.
+-   [x] Detect invalid attempts.
+-   [x] Detect invalid sessions.
+-   [x] Detect invalid mistake patterns.
+-   [x] Reset only the affected data category.
+-   [x] Avoid crashing the application.
 
 ### 77. Handle Question-Generation Failures
 
--   [ ] Validate every generated question.
--   [ ] Retry generation after an invalid result.
--   [ ] Set a maximum retry count.
--   [ ] Provide a fallback question.
--   [ ] Log useful development errors.
+-   [x] Validate every generated question.
+-   [x] Retry generation after an invalid result.
+-   [x] Set a maximum retry count.
+-   [x] Provide a fallback question.
+-   [x] Log useful development errors.
 
 ### 78. Add User-Friendly Error Messages
 
--   [ ] Add a general error component.
--   [ ] Explain storage errors in simple language.
--   [ ] Explain missing-session errors.
--   [ ] Provide a safe way to return home.
--   [ ] Avoid exposing technical stack traces.
+-   [x] Add a general error component.
+-   [x] Explain storage errors in simple language.
+-   [x] Explain missing-session errors.
+-   [x] Provide a safe way to return home.
+-   [x] Avoid exposing technical stack traces.
 
 ------------------------------------------------------------------------
 
@@ -824,26 +824,26 @@ Initial routes:
 
 ### 83. Optimize React Rendering
 
--   [ ] Identify unnecessary component re-renders.
--   [ ] Memoize expensive statistics calculations.
--   [ ] Keep question generation outside render logic.
--   [ ] Avoid unnecessary global state updates.
+-   [x] Identify unnecessary component re-renders.
+-   [x] Memoize expensive statistics calculations.
+-   [x] Keep question generation outside render logic.
+-   [x] Avoid unnecessary global state updates.
 
 ### 84. Manage Large Practice Histories
 
--   [ ] Test with several thousand attempts.
--   [ ] Measure local-storage usage.
--   [ ] Limit the number of detailed recent sessions.
--   [ ] Summarize older attempt records if necessary.
--   [ ] Preserve aggregate statistics when archiving details.
+-   [x] Test with several thousand attempts.
+-   [x] Measure local-storage usage.
+-   [x] Limit the number of detailed recent sessions.
+-   [x] Summarize older attempt records if necessary.
+-   [x] Preserve aggregate statistics when archiving details.
 
 ### 85. Improve Loading Performance
 
--   [ ] Measure the initial bundle size.
--   [ ] Lazy-load statistics and settings pages.
--   [ ] Remove unused dependencies.
--   [ ] Optimize fonts and images.
--   [ ] Test on slower devices.
+-   [x] Measure the initial bundle size.
+-   [x] Lazy-load statistics and settings pages.
+-   [x] Remove unused dependencies.
+-   [x] Optimize fonts and images.
+-   [x] Test on slower devices.
 
 ------------------------------------------------------------------------
 
@@ -948,19 +948,19 @@ first:
 
 1.  [x] Create the React and TypeScript project.
 2.  [x] Define the question types.
-3.  [ ] Implement addition question generation.
-4.  [ ] Generate four multiple-choice answers.
-5.  [ ] Create the question card front.
-6.  [ ] Add answer selection.
-7.  [ ] Create the card back.
-8.  [ ] Add the flip-card behavior.
-9.  [ ] Add the right and wrong buttons.
-10. [ ] Generate the next question.
-11. [ ] Add subtraction.
-12. [ ] Add multiplication.
-13. [ ] Add division.
-14. [ ] Add practice-session totals.
-15. [ ] Add the session summary.
+3.  [x] Implement addition question generation.
+4.  [x] Generate four multiple-choice answers.
+5.  [x] Create the question card front.
+6.  [x] Add answer selection.
+7.  [x] Create the card back.
+8.  [x] Add the flip-card behavior.
+9.  [x] Add the right and wrong buttons.
+10. [x] Generate the next question.
+11. [x] Add subtraction.
+12. [x] Add multiplication.
+13. [x] Add division.
+14. [x] Add practice-session totals.
+15. [x] Add the session summary.
 
 This produces a usable prototype before adding routing, persistence,
 advanced statistics, and personalized mistake review.
