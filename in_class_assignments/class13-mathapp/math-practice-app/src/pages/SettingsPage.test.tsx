@@ -22,6 +22,11 @@ async function renderSettings() {
   return view;
 }
 
+// Loading the lazy chunk once up front keeps the first test from spending its time budget on it.
+beforeAll(async () => {
+  await import("./SettingsPage");
+});
+
 beforeEach(() => {
   localStorage.clear();
 });

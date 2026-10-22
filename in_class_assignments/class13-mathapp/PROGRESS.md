@@ -4,7 +4,7 @@ Generated from TODO.md by `node progress.mjs`. Do not edit by hand.
 
 ```text
 Phases complete                                     [##################--]  91%  20/22
-Overall                                             [##################--]  89%  442/497
+Overall                                             [###################-]  97%  484/497
 ```
 
 ## Groups (IMPLEMENTATION_PLAN.md)
@@ -18,7 +18,7 @@ G4. Statistics (Wave 2) [P10, P15]                  [####################] 100% 
 G5. Practice flow (Wave 3) [P6, P7, P8, P14]        [####################] 100%  108/108
 G6. UX quality (Wave 4) [P16, P17]                  [####################] 100%  38/38
 G7. Robustness (Wave 4) [P18, P19, P21]             [####################] 100%  40/40
-G8. Verify and ship (Wave 5) [P20, P22]             [--------------------]   0%  0/55
+G8. Verify and ship (Wave 5) [P20, P22]             [###############-----]  76%  42/55
 ```
 
 ## Phases
@@ -43,7 +43,7 @@ Phase 16: Accessibility                             [####################] 100% 
 Phase 17: Responsive Design and Polish              [####################] 100%  18/18
 Phase 18: Session Recovery and Navigation Safety    [####################] 100%  10/10
 Phase 19: Error Handling                            [####################] 100%  16/16
-Phase 20: Testing                                   [--------------------]   0%  0/32
+Phase 20: Testing                                   [###################-]  97%  31/32
 Phase 21: Performance and Data Management           [####################] 100%  14/14
-Phase 22: Release Preparation                       [--------------------]   0%  0/23
+Phase 22: Release Preparation                       [##########----------]  48%  11/23
 ```

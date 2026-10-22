@@ -1,0 +1,50 @@
+.badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 0.2rem 0 var(--badge-shade);
+  background: var(--badge-color);
+  color: #ffffff;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.sm {
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: 1.125rem;
+}
+
+.md {
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: 1.75rem;
+}
+
+.lg {
+  width: 4rem;
+  height: 4rem;
+  font-size: 2.5rem;
+}
+
+.addition {
+  --badge-color: var(--op-add);
+  --badge-shade: var(--op-add-strong);
+}
+
+.subtraction {
+  --badge-color: var(--op-sub);
+  --badge-shade: var(--op-sub-strong);
+}
+
+.multiplication {
+  --badge-color: var(--op-mul);
+  --badge-shade: var(--op-mul-strong);
+}
+
+.division {
+  --badge-color: var(--op-div);
+  --badge-shade: var(--op-div-strong);
+}

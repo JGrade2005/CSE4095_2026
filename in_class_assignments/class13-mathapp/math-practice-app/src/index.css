@@ -1,18 +1,39 @@
 :root {
-  --color-bg: #fff8ec;
+  --color-bg: #eef6ff;
+  --color-bg-2: #fff6e3;
   --color-surface: #ffffff;
-  --color-text: #1f2340;
-  --color-primary: #3d3a9e;
-  --color-primary-hover: #2c2a7a;
-  --color-primary-tint: #e8e7fb;
+  --color-text: #1a1446;
+  --color-text-soft: #4a4470;
+  --color-primary: #5b2ee8;
+  --color-primary-strong: #3d1bb0;
+  --color-primary-hover: #4a22cf;
+  --color-primary-tint: #ede7ff;
   --color-on-primary: #ffffff;
-  --color-accent: #ffc83d;
-  --color-focus: #1f2340;
+  --color-sun: #ffc21a;
+  --color-accent: #ffc21a;
+  --color-focus: #1a1446;
   --color-disabled-bg: #e4e2dc;
   --color-disabled-border: #8a877e;
   --color-disabled-text: #5b5951;
 
-  --font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Segoe UI", system-ui, sans-serif;
+  --op-add: #0b7f57;
+  --op-add-strong: #075c3f;
+  --op-add-tint: #dcf6ea;
+  --op-sub: #c2410c;
+  --op-sub-strong: #8f300a;
+  --op-sub-tint: #ffe9dc;
+  --op-mul: #1d63d8;
+  --op-mul-strong: #14469c;
+  --op-mul-tint: #dfeaff;
+  --op-div: #b4236f;
+  --op-div-strong: #831a51;
+  --op-div-tint: #fde2f0;
+
+  --radius-card: 1.5rem;
+  --radius-control: 1rem;
+  --shadow-card: 0 0.5rem 0 rgb(26 20 70 / 12%);
+
+  --font-family: "Nunito Variable", ui-rounded, "Segoe UI", system-ui, sans-serif;
 }
 
 *,
@@ -29,7 +50,8 @@ html {
 body {
   margin: 0;
   overflow-wrap: break-word;
-  background: var(--color-bg);
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-2) 100%) fixed;
   color: var(--color-text);
   font-family: var(--font-family);
   font-size: 1.125rem;
@@ -40,6 +62,8 @@ h1,
 h2,
 h3 {
   overflow-wrap: anywhere;
+  font-weight: 900;
+  letter-spacing: -0.01em;
 }
 
 h1 {
