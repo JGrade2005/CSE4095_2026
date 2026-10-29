@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hangman Lab Report</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --ink: #1d2330; --muted: #6a7282;
+    --line: #dde1e8; --accent: #2f6fde; --ok: #1f8a4c; --warn: #c2410c;
+    --code-bg: #f1f3f6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c; --panel: #1c2027; --ink: #e6e9ef; --muted: #98a1b0;
+      --line: #2e343e; --accent: #6b9cff; --ok: #4ccf86; --warn: #ff8a50;
+      --code-bg: #232831;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header.bar { position: sticky; top: 0; z-index: 5; background: var(--panel);
+    border-bottom: 1px solid var(--line); padding: 10px 16px;
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  header.bar h1 { font-size: 16px; margin: 0 12px 0 0; }
+  .progress { flex: 1 1 160px; min-width: 140px; height: 8px; background: var(--line);
+    border-radius: 4px; overflow: hidden; }
+  .progress > div { height: 100%; background: var(--accent); width: 0; transition: width .2s; }
+  .progress-label { font-size: 13px; color: var(--muted); min-width: 120px; }
+  button, .btn { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 6px;
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button:hover { filter: brightness(0.96); }
+  .saved { font-size: 12px; color: var(--muted); }
+  main { max-width: 900px; margin: 0 auto; padding: 16px; }
+  .layout { display: grid; grid-template-columns: 200px 1fr; gap: 20px; max-width: 1140px;
+    margin: 0 auto; padding: 16px; }
+  nav.toc { position: sticky; top: 64px; align-self: start; font-size: 13px; }
+  nav.toc a { display: flex; justify-content: space-between; color: var(--ink);
+    text-decoration: none; padding: 3px 6px; border-radius: 4px; }
+  nav.toc a:hover { background: var(--line); }
+  nav.toc .part-link { font-weight: 600; margin-top: 10px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); align-self: center; }
+  .dot.done { background: var(--ok); }
+  section.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px 18px; margin-bottom: 18px; }
+  section.card h2 { margin: 0 0 4px; font-size: 18px; }
+  .pts { color: var(--muted); font-weight: 400; font-size: 13px; }
+  .q { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 14px; }
+  .q h3 { margin: 0 0 4px; font-size: 15px; }
+  .prompt { color: var(--muted); margin: 0 0 8px; font-size: 14px; }
+  label.f { display: block; font-size: 13px; font-weight: 600; margin: 8px 0 3px; }
+  textarea, input[type=text] { width: 100%; font: inherit; color: var(--ink); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; resize: vertical; }
+  textarea { min-height: 90px; }
+  textarea.mono, input.mono { font-family: ui-monospace, Consolas, "Courier New", monospace; font-size: 13px; }
+  textarea.mono { min-height: 140px; white-space: pre; overflow-x: auto; }
+  textarea:focus, input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+  .shot { border: 1px dashed var(--line); border-radius: 8px; padding: 10px; margin-top: 8px; }
+  .shot img { max-width: 100%; display: block; border-radius: 4px; }
+  .shot .missing { color: var(--warn); font-size: 13px; }
+  .shot code, .note code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  .note { font-size: 13px; background: var(--code-bg); padding: 8px 10px; border-radius: 6px; }
+  ul.checks { list-style: none; padding: 0; margin: 0; font-size: 14px; }
+  ul.checks li { padding: 3px 0; }
+  ul.checks li::before { content: "\2610  "; color: var(--warn); }
+  ul.checks li.ok::before { content: "\2611  "; color: var(--ok); }
+
+  #report { display: none; background: #fff; color: #000; max-width: 820px; margin: 0 auto;
+    padding: 32px 40px; font: 11.5pt/1.45 Georgia, "Times New Roman", serif; }
+  #report h1 { font-size: 18pt; margin: 0 0 2px; }
+  #report .sub { margin: 0 0 18px; color: #333; }
+  #report h2 { font-size: 14pt; border-bottom: 1px solid #999; padding-bottom: 2px; margin: 22px 0 8px; }
+  #report h3 { font-size: 11.5pt; margin: 14px 0 3px; }
+  #report .rp { font-style: italic; color: #444; margin: 0 0 4px; }
+  #report .ans { white-space: pre-wrap; margin: 0 0 6px; }
+  #report .kv { margin: 0 0 2px; }
+  #report pre { white-space: pre-wrap; word-break: break-word; background: #f3f3f3; border: 1px solid #ddd;
+    padding: 8px; font: 9pt/1.35 Consolas, "Courier New", monospace; margin: 4px 0 10px; }
+  #report img { max-width: 100%; border: 1px solid #ccc; margin: 4px 0 2px; }
+  #report figure { margin: 6px 0 12px; break-inside: avoid; }
+  #report figcaption { font-size: 9.5pt; color: #444; }
+  #report .empty { color: #b00; font-style: italic; }
+
+  body.preview .layout { display: none; }
+  body.preview #report { display: block; box-shadow: 0 2px 12px rgba(0,0,0,.15); margin: 20px auto; }
+
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { display: none; }
+    #report { padding: 20px 16px; }
+  }
+  @media print {
+    @page { margin: 0.7in; }
+    body { background: #fff; }
+    header.bar, .layout { display: none !important; }
+    #report { display: block !important; padding: 0; max-width: none; box-shadow: none !important; margin: 0 !important; }
+  }
+</style>
+</head>
+<body>
+<header class="bar">
+  <h1>Hangman Lab Report</h1>
+  <div class="progress"><div id="progBar"></div></div>
+  <span class="progress-label" id="progLabel"></span>
+  <button id="btnPreview">Preview</button>
+  <button class="primary" id="btnPrint">Save as PDF</button>
+  <button id="btnExport">Export JSON</button>
+  <label class="btn">Import JSON<input type="file" id="fileImport" accept="application/json" hidden></label>
+  <button id="btnImages">Reload images</button>
+  <span class="saved" id="savedLabel"></span>
+</header>
+
+<div class="layout">
+  <nav class="toc" id="toc"></nav>
+  <main id="editor" style="padding:0"></main>
+</div>
+
+<article id="report"></article>
+
+<script>
+const SHOT_DIR = "hangman_lab/screenshots/";
+const STORAGE_KEY = "cse4095-hangman-lab-report";
+
+const PARTS = [
+  { n: 1, title: "Explore the Hangman Web Application", pts: 15, questions: [
+    { id: "q1", pts: 5, prompt: "Identify three components of the Hangman application: the client, the server, and the game engine. Explain the responsibility of each component.",
+      items: [{ key: "client", label: "Client", type: "text" }, { key: "server", label: "Server", type: "text" }, { key: "engine", label: "Game engine", type: "text" }] },
+    { id: "q2", pts: 5, prompt: "Why should the hidden word be maintained by the server instead of being sent to the browser when the game starts?", items: [{ key: "a", type: "text" }] },
+    { id: "q3", pts: 5, prompt: "How can the server distinguish between two games being played by different users?", items: [{ key: "a", type: "text" }] },
+  ]},
+  { n: 2, title: "Inspect HTTP Requests", pts: 20, questions: [
+    { id: "q4", pts: 5, prompt: "Record the request used to create the game.",
+      items: [
+        { key: "url", label: "Request URL", type: "line", mono: true },
+        { key: "method", label: "HTTP method", type: "line", mono: true },
+        { key: "body", label: "Request body (if present)", type: "code" },
+        { key: "status", label: "HTTP response status code", type: "line", mono: true },
+      ] },
+    { id: "q5", pts: 5, prompt: "Examine the response body. Identify the game identifier and at least three other fields returned by the server. Explain what each field represents.",
+      items: [{ key: "json", label: "Response body (paste JSON)", type: "code" }, { key: "a", label: "Field explanations", type: "text" }] },
+    { id: "q6", pts: 5, prompt: "Record the endpoint, HTTP method, and JSON request body used to submit the guess.",
+      items: [
+        { key: "endpoint", label: "Endpoint", type: "line", mono: true },
+        { key: "method", label: "HTTP method", type: "line", mono: true },
+        { key: "body", label: "JSON request body", type: "code" },
+      ] },
+    { id: "q7", pts: 5, prompt: "Compare the server responses before and after the guess. Identify at least two fields that changed, or explain why a field remained unchanged.", items: [{ key: "a", type: "text" }] },
+    { id: "ev2", evidence: true, prompt: "Network tab screenshots.",
+      items: [
+        { key: "create", label: "Creating a game", type: "image", file: "create_game.png" },
+        { key: "guess", label: "Submitting a guess", type: "image", file: "guess_letter.png" },
+      ] },
+  ]},
+  { n: 3, title: "Interact with the REST API Using curl", pts: 20, questions: [
+    { id: "ev3", evidence: true, prompt: "Terminal output showing you created a game, submitted a guess, and retrieved its state.",
+      items: [
+        { key: "create", label: "Task 3.1: Create a game", type: "code" },
+        { key: "guess", label: "Task 3.2: Submit a guess", type: "code" },
+        { key: "state", label: "Task 3.3: Retrieve the game state", type: "code" },
+      ] },
+    { id: "q8", pts: 5, prompt: "Explain the difference between the GET and POST requests used in this exercise.", items: [{ key: "a", type: "text" }] },
+    { id: "q9", pts: 5, prompt: "What is the purpose of the Content-Type: application/json header?", items: [{ key: "a", type: "text" }] },
+    { id: "q10", pts: 5, prompt: "What happens when you request a game identifier that does not exist? Record the HTTP status code and explain its meaning.",
+      items: [{ key: "output", label: "Command and output", type: "code" }, { key: "status", label: "Status code", type: "line", mono: true }, { key: "a", label: "Meaning", type: "text" }] },
+    { id: "q11", pts: 5, prompt: "Explain why a terminal application can interact with the Hangman server without using the web interface.", items: [{ key: "a", type: "text" }] },
+  ]},
+  { n: 4, title: "Develop a Simple Python REST API Client", pts: 30, questions: [
+    { id: "q12", pts: 10, prompt: "Submit your working hangman_client.py program.",
+      items: [{ key: "note", type: "note", html: "Submitted as a separate file: <code>hangman_lab/hangman_client.py</code>. Nothing to type here." }] },
+    { id: "q13", pts: 10, prompt: "Demonstrate one complete game played through your Python client.",
+      items: [{ key: "shot", label: "Python client screenshot", type: "image", file: "python_client.png" }, { key: "transcript", label: "Terminal transcript (optional)", type: "code", optional: true }] },
+    { id: "q14", pts: 10, prompt: "Explain how your Python client interacts with the Flask server. Specifically, describe the role of HTTP requests, JSON, and the game identifier.",
+      items: [
+        { key: "http", label: "HTTP requests", type: "text" },
+        { key: "json", label: "JSON", type: "text" },
+        { key: "id", label: "Game identifier", type: "text" },
+      ] },
+  ]},
+  { n: 5, title: "Reflection: Agentic Programming", pts: 15, questions: [
+    { id: "q15", pts: 5, prompt: "What tasks did you use an AI coding assistant for? Give at least two specific examples of prompts you used.",
+      items: [{ key: "a", label: "Tasks", type: "text" }, { key: "p1", label: "Prompt example 1", type: "text" }, { key: "p2", label: "Prompt example 2", type: "text" }] },
+    { id: "q16", pts: 5, prompt: "Describe one problem you encountered while developing or testing your Python client. How did you diagnose and resolve it?",
+      items: [{ key: "problem", label: "Problem", type: "text" }, { key: "diagnosis", label: "Diagnosis", type: "text" }, { key: "fix", label: "Resolution", type: "text" }] },
+    { id: "q17", pts: 5, prompt: "Suppose you want to replace the human player with an automated Hangman bot. What changes would you make to your Python client? Would the Flask server need to change? Explain.",
+      items: [{ key: "client", label: "Client changes", type: "text" }, { key: "server", label: "Server changes?", type: "text" }] },
+  ]},
+];
+
+const META = [
+  { key: "name", label: "Name" },
+  { key: "netid", label: "NetID" },
+  { key: "date", label: "Date" },
+];
+
+let state = { meta: {}, answers: {} };
+const imageOk = {};
+let imageStamp = Date.now();
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) state = Object.assign({ meta: {}, answers: {} }, JSON.parse(raw));
+  } catch (e) { /* storage unavailable, start empty */ }
+  if (!state.meta.date) state.meta.date = new Date().toISOString().slice(0, 10);
+}
+
+function save() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    document.getElementById("savedLabel").textContent = "Saved " + new Date().toLocaleTimeString();
+  } catch (e) {
+    document.getElementById("savedLabel").textContent = "Autosave unavailable, use Export JSON";
+  }
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+const answerKey = (q, item) => q.id + "." + item.key;
+const shotSrc = file => SHOT_DIR + file + "?v=" + imageStamp;
+
+function isItemDone(q, item) {
+  if (item.type === "note" || item.optional) return true;
+  if (item.type === "image") return imageOk[item.file] === true;
+  return (state.answers[answerKey(q, item)] || "").trim() !== "";
+}
+
+const isQuestionDone = q => q.items.every(item => isItemDone(q, item));
+
+function buildEditor() {
+  const ed = document.getElementById("editor");
+  let html = `<section class="card"><h2>Student info</h2><div class="meta-grid">` +
+    META.map(m => `<div><label class="f" for="meta-${m.key}">${m.label}</label>
+      <input type="text" id="meta-${m.key}" data-meta="${m.key}" value="${esc(state.meta[m.key] || "")}"></div>`).join("") +
+    `</div></section>`;
+
+  for (const part of PARTS) {
+    html += `<section class="card" id="part${part.n}"><h2>Part ${part.n}: ${part.title} <span class="pts">(${part.pts} pts)</span></h2>`;
+    for (const q of part.questions) {
+      const title = q.evidence ? "Evidence" : q.id.toUpperCase() + ` <span class="pts">(${q.pts} pts)</span>`;
+      html += `<div class="q" id="${q.id}"><h3>${title}</h3><p class="prompt">${esc(q.prompt)}</p>`;
+      for (const item of q.items) html += itemEditor(q, item);
+      html += `</div>`;
+    }
+    html += `</section>`;
+  }
+  html += `<section class="card" id="checklist"><h2>Submission checklist</h2><ul class="checks" id="checks"></ul></section>`;
+  ed.innerHTML = html;
+
+  ed.addEventListener("input", e => {
+    const el = e.target;
+    if (el.dataset.meta) state.meta[el.dataset.meta] = el.value;
+    else if (el.dataset.key) state.answers[el.dataset.key] = el.value;
+    else return;
+    save();
+    refreshStatus();
+  });
+  ed.querySelectorAll(".shot img").forEach(watchImage);
+}
+
+function itemEditor(q, item) {
+  const k = answerKey(q, item);
+  const id = "f-" + k.replace(".", "-");
+  const val = esc(state.answers[k] || "");
+  const label = item.label ? `<label class="f" for="${id}">${item.label}</label>` : "";
+  switch (item.type) {
+    case "line":
+      return label + `<input type="text" id="${id}" data-key="${k}" class="${item.mono ? "mono" : ""}" value="${val}">`;
+    case "code":
+      return label + `<textarea id="${id}" data-key="${k}" class="mono" spellcheck="false">${val}</textarea>`;
+    case "note":
+      return `<div class="note">${item.html}</div>`;
+    case "image":
+      return `<label class="f">${item.label}</label><div class="shot">
+        <img data-file="${item.file}" src="${shotSrc(item.file)}" alt="${item.label}">
+        <div class="missing" hidden>Missing: save it as <code>${SHOT_DIR}${item.file}</code>, then click Reload images.</div></div>`;
+    default:
+      return label + `<textarea id="${id}" data-key="${k}">${val}</textarea>`;
+  }
+}
+
+function watchImage(img) {
+  const file = img.dataset.file;
+  const missing = img.nextElementSibling;
+  img.onload = () => { imageOk[file] = true; img.hidden = false; missing.hidden = true; refreshStatus(); };
+  img.onerror = () => { imageOk[file] = false; img.hidden = true; missing.hidden = false; refreshStatus(); };
+}
+
+function reloadImages() {
+  imageStamp = Date.now();
+  document.querySelectorAll(".shot img").forEach(img => { img.src = shotSrc(img.dataset.file); });
+}
+
+function refreshStatus() {
+  const graded = PARTS.flatMap(p => p.questions);
+  const done = graded.filter(isQuestionDone).length;
+  document.getElementById("progBar").style.width = (100 * done / graded.length) + "%";
+  document.getElementById("progLabel").textContent = `${done} / ${graded.length} sections done`;
+
+  let toc = "";
+  for (const part of PARTS) {
+    toc += `<a class="part-link" href="#part${part.n}">Part ${part.n} <span class="pts">${part.pts}</span></a>`;
+    for (const q of part.questions) {
+      toc += `<a href="#${q.id}">${q.evidence ? "Evidence" : q.id.toUpperCase()}<span class="dot ${isQuestionDone(q) ? "done" : ""}"></span></a>`;
+    }
+  }
+  toc += `<a class="part-link" href="#checklist">Checklist</a>`;
+  document.getElementById("toc").innerHTML = toc;
+
+  const checks = [
+    ["Name and NetID filled in", !!(state.meta.name || "").trim() && !!(state.meta.netid || "").trim()],
+    ["All questions and evidence complete", done === graded.length],
+    ["screenshots/create_game.png found", imageOk["create_game.png"] === true],
+    ["screenshots/guess_letter.png found", imageOk["guess_letter.png"] === true],
+    ["screenshots/python_client.png found", imageOk["python_client.png"] === true],
+  ];
+  const manual = [
+    "hangman_client.py is finished and plays a full game",
+    "Clicked Save as PDF and saved it as hangman_lab/lab_report.pdf",
+    "Ran ./make_zip.sh to build hangman_lab.zip",
+  ];
+  document.getElementById("checks").innerHTML =
+    checks.map(([t, ok]) => `<li class="${ok ? "ok" : ""}">${t}</li>`).join("") +
+    manual.map(t => `<li class="manual">${t} <span class="pts">(check yourself)</span></li>`).join("");
+}
+
+function buildReport() {
+  const m = state.meta;
+  const empty = `<span class="empty">[not answered]</span>`;
+  let h = `<h1>Lab: Exploring a Flask Server and REST API with Hangman</h1>
+    <p class="sub">CSE 4095 Agentic Programming<br>${esc(m.name || "Name")}${m.netid ? " (" + esc(m.netid) + ")" : ""} &middot; ${esc(m.date || "")}</p>`;
+
+  for (const part of PARTS) {
+    h += `<h2>Part ${part.n}: ${part.title} (${part.pts} pts)</h2>`;
+    for (const q of part.questions) {
+      h += q.evidence ? `<h3>Evidence</h3>` : `<h3>${q.id.toUpperCase()} (${q.pts} pts)</h3><p class="rp">${esc(q.prompt)}</p>`;
+      for (const item of q.items) {
+        const v = (state.answers[answerKey(q, item)] || "").trim();
+        if (item.type === "note") {
+          h += `<p class="ans">${item.html.replace(" Nothing to type here.", "")}</p>`;
+        } else if (item.type === "image") {
+          h += imageOk[item.file]
+            ? `<figure><img src="${shotSrc(item.file)}" alt=""><figcaption>${item.label} (${item.file})</figcaption></figure>`
+            : `<p class="ans"><span class="empty">[missing screenshot: ${item.file}]</span></p>`;
+        } else if (item.optional && !v) {
+          continue;
+        } else if (item.type === "code") {
+          h += (item.label ? `<p class="kv"><b>${item.label}:</b></p>` : "") + (v ? `<pre>${esc(v)}</pre>` : `<p class="ans">${empty}</p>`);
+        } else if (item.type === "line") {
+          h += `<p class="kv"><b>${item.label}:</b> ${v ? `<code>${esc(v)}</code>` : empty}</p>`;
+        } else {
+          h += (item.label ? `<p class="kv"><b>${item.label}:</b></p>` : "") + `<p class="ans">${v ? esc(v) : empty}</p>`;
+        }
+      }
+    }
+  }
+  document.getElementById("report").innerHTML = h;
+}
+
+function togglePreview() {
+  const on = document.body.classList.toggle("preview");
+  if (on) buildReport();
+  document.getElementById("btnPreview").textContent = on ? "Back to editor" : "Preview";
+  window.scrollTo(0, 0);
+}
+
+function exportJson() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "report_answers.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importJson(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      state = { meta: data.meta || {}, answers: data.answers || {} };
+      save();
+      document.getElementById("editor").replaceWith(Object.assign(document.createElement("main"), { id: "editor", style: "padding:0" }));
+      buildEditor();
+      refreshStatus();
+    } catch (e) {
+      alert("That file is not a valid report JSON export.");
+    }
+  };
+  reader.readAsText(file);
+}
+
+window.addEventListener("beforeprint", buildReport);
+document.getElementById("btnPreview").onclick = togglePreview;
+document.getElementById("btnPrint").onclick = () => { buildReport(); window.print(); };
+document.getElementById("btnExport").onclick = exportJson;
+document.getElementById("btnImages").onclick = reloadImages;
+document.getElementById("fileImport").onchange = e => { if (e.target.files[0]) importJson(e.target.files[0]); e.target.value = ""; };
+
+load();
+buildEditor();
+refreshStatus();
+</script>
+</body>
+</html>
